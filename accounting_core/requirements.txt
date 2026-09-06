@@ -1,0 +1,8 @@
+# Domain / Application — minimal
+jdatetime>=4.1.0
+
+# Infrastructure
+SQLAlchemy>=2.0.0
+alembic>=1.13.0
+psycopg2-binary>=2.9.0   # for PostgreSQL
+# SQLite is built-in (for local demo)
