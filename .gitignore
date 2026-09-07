@@ -30,11 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Python generated artifacts
-__pycache__/
-*.py[cod]
-*.db
-
-# Build metadata
-*.egg-info/
