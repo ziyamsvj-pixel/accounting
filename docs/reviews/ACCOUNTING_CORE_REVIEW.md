@@ -2,8 +2,8 @@
 
 ## گزارش رسمی بررسی مخزن `ziya1346/accounting_core`
 
-**تاریخ بررسی:** 2026-08-24  
-**Branch:** `main`  
+**تاریخ بررسی:** 2026-08-24
+**Branch:** `main`
 **هدف:** ارزیابی `accounting_core` به‌عنوان پایه احتمالی هسته حسابداری ParsERP-Enterprise
 
 ---
@@ -86,7 +86,7 @@
 # 5. Critical Issues
 
 ## AC-001 — تقویم و تاریخ شمسی
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 در Demo و تست‌ها از الگوی `date(1404, ...)` استفاده شده که در Python تاریخ میلادی است، نه تاریخ شمسی.
@@ -103,7 +103,7 @@ Calendar abstraction با پشتیبانی از Gregorian، Persian/Solar Hijri�
 ---
 
 ## AC-002 — Multi-Tenant Architecture
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Scope هدف:
@@ -119,7 +119,7 @@ Scope هدف:
 ---
 
 ## AC-003 — Multi-Company / Multi-Branch
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Entityهای مستقل موردنیاز:
@@ -135,7 +135,7 @@ Entityهای مستقل موردنیاز:
 ---
 
 ## AC-004 — Chart of Accounts
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Target:
@@ -147,7 +147,7 @@ Target:
 ---
 
 ## AC-005 — Party Master
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Party باید مستقل از Account باشد و حداقل Individual، Legal Entity، Customer، Supplier، Employee، Shareholder و Other را پوشش دهد.
@@ -155,7 +155,7 @@ Party باید مستقل از Account باشد و حداقل Individual، Legal
 ---
 
 ## AC-006 — Floating Dimensions
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 وجود `project_code` و `cost_center` با Floating Detail کامل یکسان نیست.
@@ -165,7 +165,7 @@ Party باید مستقل از Account باشد و حداقل Individual، Legal
 ---
 
 ## AC-007 — Immutable Posted Journal
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Lifecycle پیشنهادی:
@@ -177,7 +177,7 @@ Lifecycle پیشنهادی:
 ---
 
 ## AC-008 — Transaction-Safe Numbering
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 `MAX(number) + 1` در محیط Concurrent خطرناک است.
@@ -187,7 +187,7 @@ Sequence باید Transaction-Safe و دارای Unique Constraint باشد؛ Sc
 ---
 
 ## AC-009 — Transaction Boundary
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Posting باید Atomic باشد:
@@ -199,7 +199,7 @@ Posting باید Atomic باشد:
 ---
 
 ## AC-010 — Idempotency
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 برای Journal Posting، Invoice Creation، Payment، Stock Transfer و Moadian Submission باید Idempotency Key وجود داشته باشد.
@@ -207,7 +207,7 @@ Posting باید Atomic باشد:
 ---
 
 ## AC-011 — Database Integrity
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Database باید Foreign Key، Unique، Not Null، Check Constraint و Isolationهای Tenant/Company/Fiscal Year را enforce کند.
@@ -215,7 +215,7 @@ Database باید Foreign Key، Unique، Not Null، Check Constraint و Isolatio
 ---
 
 ## AC-012 — Currency / Money Model
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Money و JournalLine باید از یک Monetary Policy مرکزی استفاده کنند: precision، rounding، tax precision و rounding differences.
@@ -223,7 +223,7 @@ Money و JournalLine باید از یک Monetary Policy مرکزی استفاد�
 ---
 
 ## AC-013 — ریال / تومان
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 باید تفاوت Currency قانونی/حسابداری با Display Unit روشن شود. پیشنهاد اولیه: IRR واحد پایه حسابداری و Toman واحد نمایش/ورودی طبق Policy.
@@ -231,7 +231,7 @@ Money و JournalLine باید از یک Monetary Policy مرکزی استفاد�
 ---
 
 ## AC-014 — Exchange Rate / Revaluation
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 پشتیبانی لازم:
@@ -249,7 +249,7 @@ Money و JournalLine باید از یک Monetary Policy مرکزی استفاد�
 ---
 
 ## AC-015 — Audit Trail
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 ثبت Who، When، What، Before، After، Why، IP، Session، Correlation ID، Source، Tenant و Company. Audit باید Append-Only باشد.
@@ -257,7 +257,7 @@ Money و JournalLine باید از یک Monetary Policy مرکزی استفاد�
 ---
 
 ## AC-016 — Security / Authorization
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Authorization باید در API/Application اعمال شود، نه فقط UI.
@@ -275,7 +275,7 @@ Authorization باید در API/Application اعمال شود، نه فقط UI.
 ---
 
 ## AC-017 — Separation of Duties
-**Severity:** High/Critical  
+**Severity:** High/Critical
 **Status:** Open
 
 Create / Approve / Post باید قابلیت تفکیک کاربر داشته باشد.
@@ -283,7 +283,7 @@ Create / Approve / Post باید قابلیت تفکیک کاربر داشته �
 ---
 
 ## AC-018 — Reversal Model
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 رابطه صریح original/reversal و ثبت reason، user، timestamp لازم است و Reverse چندباره باید کنترل شود.
@@ -291,7 +291,7 @@ Create / Approve / Post باید قابلیت تفکیک کاربر داشته �
 ---
 
 ## AC-019 — Invoice Domain
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Domain مستقل برای SalesInvoice، PurchaseInvoice، InvoiceLine، InvoiceTax، Discount، Payment و Status.
@@ -299,7 +299,7 @@ Domain مستقل برای SalesInvoice، PurchaseInvoice، InvoiceLine، Invoic
 ---
 
 ## AC-020 — Tax / VAT Domain
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Tax، VAT، TaxRate، TaxCategory، TaxExemption، TaxPeriod و TaxTransaction باید Domain مستقل باشند.
@@ -307,7 +307,7 @@ Tax، VAT، TaxRate، TaxCategory، TaxExemption، TaxPeriod و TaxTransaction �
 ---
 
 ## AC-021 — سامانه مودیان
-**Severity:** Critical  
+**Severity:** Critical
 **Status:** Open
 
 Flow هدف:
@@ -388,7 +388,7 @@ UI نباید مستقیماً به Database وصل شود و قواعد حسا�
 # 9. Repository Hygiene
 
 ## AC-025 — Git Conflict
-**Severity:** High  
+**Severity:** High
 **Status:** Open
 
 README دارای Merge Conflict حل‌نشده است.
