@@ -25,3 +25,11 @@
 **چرا:** پروژه هیچ‌کدام از این مستندات را نداشت، در حالی که قوانین مخزن حاکمیت آن‌ها را لازم می‌داند.
 
 **نیاز به بررسی توسعه‌دهنده؟** خیر. هیچ بخشی از خود برنامه تغییر نکرده و ظاهر و عملکرد سایت دست‌نخورده است.
+
+## GOV-2026-004 — Accounting Core v2 integration
+
+**Date:** 2026-09-09
+**Type:** Integration and application source consolidation
+**Status:** Applied to `main`
+
+The v2 archive was reviewed and its Compliance routes, Supabase integration, versioned migration, and frontend dependency lock were integrated. The archive `.env` was excluded from version control; the migration was not executed.

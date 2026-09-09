@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+
+import { SiteLayout } from "@/components/site-layout";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -111,8 +113,8 @@ function Section({
 
 function Index() {
   return (
-    <div dir="rtl" lang="fa" className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto w-full max-w-5xl px-6 py-14">
+    <SiteLayout>
+      <div className="w-full">
         <header className="pb-10">
           <p className="text-xs font-medium tracking-widest text-muted-foreground">
             ACCOUNTING CORE
@@ -134,6 +136,20 @@ function Index() {
                 {tag}
               </span>
             ))}
+          </div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              to="/rules"
+              className="rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              مشاهدهٔ قواعد انطباق
+            </Link>
+            <Link
+              to="/allocation"
+              className="rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted"
+            >
+              ماشین‌حساب تخصیص هزینه
+            </Link>
           </div>
         </header>
 
@@ -225,6 +241,6 @@ function Index() {
           منبع رسمی آن فعال نمی‌شود.
         </footer>
       </div>
-    </div>
+    </SiteLayout>
   );
 }
