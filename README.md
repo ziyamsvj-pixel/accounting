@@ -22,3 +22,9 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## مسیر ساخت واقعی Accounting Core
+
+ترتیب توسعهٔ مورد تأیید معماری به‌صورت مرحله‌ای تعریف شده است: Foundation، Tenant/Company/Branch، Fiscal Year/Calendar، Chart of Accounts، Party، Journal، Posting، Currency و Rial/Toman، Dimensions، Audit، Sales/Purchase، Inventory، Tax/VAT و Moadian.
+
+تغییر ساختار Database، migration، احراز هویت یا اتصال سرویس جدید تا دریافت تأیید صریح مالک پروژه انجام نمی‌شود. جزئیات baseline کیفیت و مرز قابلیت‌های موجود در [`docs/QUALITY-BASELINE.md`](docs/QUALITY-BASELINE.md) و [`docs/PROJECT-KNOWLEDGE.md`](docs/PROJECT-KNOWLEDGE.md) ثبت شده است.
