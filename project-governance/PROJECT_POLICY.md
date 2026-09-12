@@ -6,7 +6,7 @@
 
 ```
 PROJECT NAME: accounting_core (Lovable)
-REPOSITORY (GitHub Sync): https://github.com/ziya1346/accounting_core
+REPOSITORY (GitHub Sync): https://github.com/ziyamsvj-pixel/accounting
 BRANCH: main
 PROJECT OWNER: ziya1346
 PROJECT MANAGER: ziya1346

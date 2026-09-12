@@ -33,3 +33,12 @@
 **Status:** Applied to `main`
 
 The v2 archive was reviewed and its Compliance routes, Supabase integration, versioned migration, and frontend dependency lock were integrated. The archive `.env` was excluded from version control; the migration was not executed.
+
+## GOV-2026-005 — Foundation strengthening baseline
+
+**Date:** 2026-09-12
+**Type:** Governance, quality baseline, and architecture readiness
+**Branch:** `foundation/strengthening-2026-09-12`
+**Status:** Ready for review
+
+The strengthening patch was reviewed and its project policy, resources registry, quality baseline, and project knowledge were applied. A Foundation readiness report was added. No database schema, migration execution, authentication, or external service change was performed.
