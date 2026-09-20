@@ -54,16 +54,16 @@ rollback;
 
 برای هر transition حداقل این ماتریس را اجرا کنید:
 
-| وضعیت فعلی | وضعیت مقصد | actor مجاز | نتیجهٔ مورد انتظار |
-|---|---|---|---|
-| draft | submitted | مالک editor | موفق |
-| submitted | approved | کاربر دیگری با permission تأیید | موفق |
-| submitted | approved | مالک سند | رد با خطای مجوز یا policy |
-| approved | posted | admin یا permission مشخص | موفق |
-| draft | posted | هر actor | رد |
-| posted | draft | هر actor | رد |
-| posted | reversed | admin با علت | موفق |
-| هر وضعیت | هر وضعیت با version قدیمی | actor مجاز | رد با stale version |
+| وضعیت فعلی | وضعیت مقصد                | actor مجاز                      | نتیجهٔ مورد انتظار        |
+| ---------- | ------------------------- | ------------------------------- | ------------------------- |
+| draft      | submitted                 | مالک editor                     | موفق                      |
+| submitted  | approved                  | کاربر دیگری با permission تأیید | موفق                      |
+| submitted  | approved                  | مالک سند                        | رد با خطای مجوز یا policy |
+| approved   | posted                    | admin یا permission مشخص        | موفق                      |
+| draft      | posted                    | هر actor                        | رد                        |
+| posted     | draft                     | هر actor                        | رد                        |
+| posted     | reversed                  | admin با علت                    | موفق                      |
+| هر وضعیت   | هر وضعیت با version قدیمی | actor مجاز                      | رد با stale version       |
 
 هر تست باید مقدار status، actor، version و رکورد audit را هم بررسی کند. موفقیت صرفاً بر اساس status کافی نیست.
 
@@ -152,4 +152,4 @@ CI زمانی سبز است که migration از database خالی اجرا شو�
 [3]: https://supabase.com/docs/guides/database/extensions/pg_tap "Supabase pgTAP Testing"
 [4]: https://vitest.dev/guide/ "Vitest Guide"
 
-*نویسنده: Manus AI*
+_نویسنده: Manus AI_

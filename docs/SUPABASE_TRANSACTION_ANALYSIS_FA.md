@@ -137,4 +137,4 @@ WITH CHECK (
 [5]: https://www.postgresql.org/docs/current/transaction-iso.html "PostgreSQL Transaction Isolation"
 [6]: https://supabase.com/docs/guides/api/rest/json-data "Supabase JSON and PostgREST Data"
 
-*نویسنده: Manus AI*
+_نویسنده: Manus AI_

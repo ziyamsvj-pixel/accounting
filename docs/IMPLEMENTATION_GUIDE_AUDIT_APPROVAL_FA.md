@@ -180,16 +180,16 @@ WHERE id = p_entry_id
 
 مجوزها را از نقش کلی به permissionهای دامنه‌ای نزدیک کنید. حداقل permissionهای زیر لازم است:
 
-| Permission | viewer | editor | admin |
-|---|---:|---:|---:|
-| دیدن سند مجاز | بله | بله | بله |
-| ایجاد draft | خیر | بله | بله |
-| ارسال برای بررسی | خیر | بله | بله |
-| تأیید سند دیگران | خیر | طبق policy | بله |
-| ثبت قطعی | خیر | طبق policy | بله |
-| قفل دوره | خیر | خیر | بله |
-| مدیریت نقش | خیر | خیر | بله |
-| مشاهدهٔ audit کامل | خیر | محدود | بله |
+| Permission         | viewer |     editor | admin |
+| ------------------ | -----: | ---------: | ----: |
+| دیدن سند مجاز      |    بله |        بله |   بله |
+| ایجاد draft        |    خیر |        بله |   بله |
+| ارسال برای بررسی   |    خیر |        بله |   بله |
+| تأیید سند دیگران   |    خیر | طبق policy |   بله |
+| ثبت قطعی           |    خیر | طبق policy |   بله |
+| قفل دوره           |    خیر |        خیر |   بله |
+| مدیریت نقش         |    خیر |        خیر |   بله |
+| مشاهدهٔ audit کامل |    خیر |      محدود |   بله |
 
 قانون پایه این است که سازندهٔ سند نتواند همان سند را تأیید کند. اگر کسب‌وکار به تأیید تک‌نفره نیاز دارد، باید آن تصمیم به‌صورت صریح در policy ثبت و در audit ذخیره شود.
 
@@ -228,4 +228,4 @@ WHERE id = p_entry_id
 [4]: https://www.postgresql.org/docs/current/transaction-iso.html "PostgreSQL Transaction Isolation"
 [5]: https://www.postgresql.org/docs/current/plpgsql-transactions.html "PostgreSQL Transaction Management"
 
-*نویسنده: Manus AI*
+_نویسنده: Manus AI_

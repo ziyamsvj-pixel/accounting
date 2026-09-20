@@ -15,6 +15,7 @@ import { Route as AllocationRouteImport } from './routes/allocation'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SourcesRouteImport } from './routes/sources'
 import { Route as AuthenticatedLedgerRouteImport } from './routes/_authenticated/ledger'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as RulesIndexRouteImport } from './routes/rules.index'
 import { Route as RulesRuleIdRouteImport } from './routes/rules.$ruleId'
 import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents.index'
@@ -48,6 +49,11 @@ const SourcesRoute = SourcesRouteImport.update({
 const AuthenticatedLedgerRoute = AuthenticatedLedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const RulesIndexRoute = RulesIndexRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
   '/ledger': typeof AuthenticatedLedgerRoute
+  '/reports': typeof AuthenticatedReportsRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
   '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
   '/ledger': typeof AuthenticatedLedgerRoute
+  '/reports': typeof AuthenticatedReportsRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules': typeof RulesIndexRoute
   '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
   '/_authenticated/ledger': typeof AuthenticatedLedgerRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
   '/_authenticated/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sources'
     | '/ledger'
+    | '/reports'
     | '/rules/$ruleId'
     | '/rules/'
     | '/documents/$entryId'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sources'
     | '/ledger'
+    | '/reports'
     | '/rules/$ruleId'
     | '/rules'
     | '/documents/$entryId'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sources'
     | '/_authenticated/ledger'
+    | '/_authenticated/reports'
     | '/rules/$ruleId'
     | '/rules/'
     | '/_authenticated/documents/$entryId'
@@ -211,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLedgerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/rules/': {
       id: '/rules/'
       path: '/rules'
@@ -251,6 +270,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLedgerRoute: typeof AuthenticatedLedgerRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedDocumentsEntryIdRoute: typeof AuthenticatedDocumentsEntryIdRoute
   AuthenticatedDocumentsNewRoute: typeof AuthenticatedDocumentsNewRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
@@ -258,6 +278,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLedgerRoute: AuthenticatedLedgerRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedDocumentsEntryIdRoute: AuthenticatedDocumentsEntryIdRoute,
   AuthenticatedDocumentsNewRoute: AuthenticatedDocumentsNewRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
