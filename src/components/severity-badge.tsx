@@ -19,9 +19,7 @@ export function SeverityBadge({ severity }: { severity: string }) {
     className: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${s.className}`}>
-      {s.label}
-    </span>
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${s.className}`}>{s.label}</span>
   );
 }
 

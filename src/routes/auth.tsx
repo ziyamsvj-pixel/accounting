@@ -57,7 +57,9 @@ function AuthPage() {
         if (data.session) {
           navigate({ to: "/documents", replace: true });
         } else {
-          setMessage("حساب ساخته شد. برای فعال‌سازی، پیوند تأیید ارسال‌شده به ایمیل خود را باز کنید.");
+          setMessage(
+            "حساب ساخته شد. برای فعال‌سازی، پیوند تأیید ارسال‌شده به ایمیل خود را باز کنید.",
+          );
         }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });

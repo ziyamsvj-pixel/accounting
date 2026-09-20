@@ -43,9 +43,13 @@ function LedgerPage() {
   for (const entry of rows) {
     for (const line of entry.journal_lines) {
       const key = line.account_code || line.account_name;
-      const acc =
-        accounts.get(key) ??
-        { code: line.account_code, name: line.account_name, debit: 0, credit: 0, movements: [] };
+      const acc = accounts.get(key) ?? {
+        code: line.account_code,
+        name: line.account_name,
+        debit: 0,
+        credit: 0,
+        movements: [],
+      };
       acc.debit += Number(line.debit || 0);
       acc.credit += Number(line.credit || 0);
       acc.movements.push({

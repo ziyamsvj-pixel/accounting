@@ -104,7 +104,9 @@ function DocumentsPage() {
               </p>
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() => navigate({ to: "/documents/$entryId", params: { entryId: entry.id } })}
+                  onClick={() =>
+                    navigate({ to: "/documents/$entryId", params: { entryId: entry.id } })
+                  }
                   className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
                 >
                   بررسی انطباق

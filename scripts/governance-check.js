@@ -36,9 +36,7 @@ if (touchedCode && !touchedChangelog) {
   errors.push(`Code changed but ${CHANGELOG} was not updated.`);
 }
 
-const missing = REQUIRED_SECTIONS.filter(
-  (s) => !prBody.toLowerCase().includes(s.toLowerCase()),
-);
+const missing = REQUIRED_SECTIONS.filter((s) => !prBody.toLowerCase().includes(s.toLowerCase()));
 if (missing.length > 0) {
   errors.push(`PR description is missing: ${missing.join(", ")}.`);
 }

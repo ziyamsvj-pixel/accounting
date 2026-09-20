@@ -140,10 +140,7 @@ export const deleteEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("journal_entries")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("journal_entries").delete().eq("id", data.id);
     return { error: error?.message ?? null };
   });
 

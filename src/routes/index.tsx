@@ -57,14 +57,7 @@ const severities = [
   },
 ];
 
-const lifecycle = [
-  "پیش‌نویس",
-  "بازبینی‌شده",
-  "تأییدشده",
-  "فعال",
-  "جایگزین‌شده",
-  "بازنشسته",
-];
+const lifecycle = ["پیش‌نویس", "بازبینی‌شده", "تأییدشده", "فعال", "جایگزین‌شده", "بازنشسته"];
 
 const allocationBases = [
   "نسبت درآمد",
@@ -123,9 +116,9 @@ function Index() {
             هستهٔ حسابداری — انطباق و هوش مقرراتی
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-8 text-muted-foreground sm:text-base">
-            مقررات جدا از اصول ثابت حسابداری نگهداری و نسخه‌گذاری می‌شوند. هر قاعدهٔ فعال باید
-            منبع رسمی تأییدشده، بازهٔ اعتبار و پوشش تست داشته باشد. آموزش کاربر و قابلیت
-            حسابرسی، از همان ابتدا بخشی از طراحی‌اند.
+            مقررات جدا از اصول ثابت حسابداری نگهداری و نسخه‌گذاری می‌شوند. هر قاعدهٔ فعال باید منبع
+            رسمی تأییدشده، بازهٔ اعتبار و پوشش تست داشته باشد. آموزش کاربر و قابلیت حسابرسی، از همان
+            ابتدا بخشی از طراحی‌اند.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {["نسخه‌دار", "منبع‌محور", "قابل حسابرسی", "چندشرکتی"].map((tag) => (
@@ -163,15 +156,16 @@ function Index() {
                 <span className="rounded-md border border-border bg-card px-3 py-2 text-sm">
                   {step}
                 </span>
-                {i < pipeline.length - 1 ? (
-                  <span className="text-muted-foreground">←</span>
-                ) : null}
+                {i < pipeline.length - 1 ? <span className="text-muted-foreground">←</span> : null}
               </li>
             ))}
           </ol>
         </Section>
 
-        <Section title="حوزه‌های تخصصی" subtitle="مرزبندی دامنه‌ها برای جلوگیری از درهم‌آمیختن قواعد.">
+        <Section
+          title="حوزه‌های تخصصی"
+          subtitle="مرزبندی دامنه‌ها برای جلوگیری از درهم‌آمیختن قواعد."
+        >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {contexts.map((c) => (
               <div key={c} className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
@@ -198,10 +192,7 @@ function Index() {
         >
           <div className="flex flex-wrap gap-2">
             {lifecycle.map((s, i) => (
-              <span
-                key={s}
-                className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
-              >
+              <span key={s} className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
                 {i + 1}. {s}
               </span>
             ))}

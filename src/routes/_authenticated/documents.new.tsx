@@ -149,7 +149,10 @@ function NewDocumentPage() {
 
           <div className="space-y-3">
             {rows.map((row, i) => (
-              <div key={i} className="grid gap-2 rounded-md border border-border/60 p-3 sm:grid-cols-5">
+              <div
+                key={i}
+                className="grid gap-2 rounded-md border border-border/60 p-3 sm:grid-cols-5"
+              >
                 <input
                   value={row.account_code}
                   onChange={(e) => update(i, { account_code: e.target.value })}
