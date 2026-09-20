@@ -43,7 +43,6 @@ function NewDocumentPage() {
   const [entryDateFa, setEntryDateFa] = useState("");
   const [documentNumber, setDocumentNumber] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("draft");
   const [rows, setRows] = useState<Row[]>([emptyRow(), emptyRow()]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +65,6 @@ function NewDocumentPage() {
         entry_date_fa: entryDateFa || null,
         document_number: documentNumber,
         description,
-        status,
         lines: rows.filter((r) => r.account_code || r.account_name),
       },
     });
@@ -118,12 +116,9 @@ function NewDocumentPage() {
               required
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-muted-foreground">وضعیت</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={field}>
-              <option value="draft">پیش‌نویس</option>
-              <option value="posted">ثبت قطعی</option>
-            </select>
+          <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            این فرم همیشه یک پیش‌نویس ایجاد می‌کند. ارسال برای بررسی، تأیید و ثبت قطعی از صفحهٔ سند
+            و بر اساس نقش کاربر انجام می‌شود.
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs text-muted-foreground">شرح سند</label>

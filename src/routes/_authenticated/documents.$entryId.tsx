@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 
 import { SiteLayout, PageHeader } from "@/components/site-layout";
-import { entryQuery } from "@/lib/accounting.functions";
+import {
+  accessQuery,
+  entryQuery,
+  transitionEntry,
+  type TransitionTarget,
+} from "@/lib/accounting.functions";
 import { rulesQuery } from "@/lib/compliance.functions";
 import { evaluateEntry, summarize, OUTCOME_FA, type CheckOutcome } from "@/lib/compliance-engine";
 import { SeverityBadge } from "@/components/severity-badge";
@@ -32,13 +39,41 @@ const OUTCOME_CLASS: Record<CheckOutcome, string> = {
   manual: "bg-muted text-muted-foreground",
 };
 
+const STATUS_FA: Record<string, string> = {
+  draft: "پیش‌نویس",
+  submitted: "ارسال‌شده برای بررسی",
+  returned: "برگشت‌خورده",
+  approved: "تأییدشده",
+  posted: "ثبت قطعی",
+  locked: "قفل‌شده",
+  reversed: "معکوس‌شده",
+};
+
 function EntryPage() {
   const { entryId } = Route.useParams();
   const entryRes = useQuery(entryQuery(entryId));
   const rulesRes = useQuery(rulesQuery);
+  const accessRes = useQuery(accessQuery);
+  const queryClient = useQueryClient();
+  const changeStatus = useServerFn(transitionEntry);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const entry = entryRes.data?.entry ?? null;
   const rules = rulesRes.data?.rules ?? [];
+
+  async function onTransition(target: TransitionTarget) {
+    if (!entry) return;
+    setActionError(null);
+    const res = await changeStatus({ data: { id: entry.id, version: entry.version, target } });
+    if (res.error) {
+      setActionError(res.error);
+      return;
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["journal-entry", entry.id] }),
+      queryClient.invalidateQueries({ queryKey: ["journal-entries"] }),
+    ]);
+  }
 
   if (entryRes.isLoading || rulesRes.isLoading) {
     return (
@@ -70,6 +105,55 @@ function EntryPage() {
         title={`سند شماره ${entry.document_number}`}
         lead={entry.description || "بدون شرح"}
       />
+
+      <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-4">
+        <span className="rounded-full border border-border px-3 py-1 text-xs">
+          وضعیت: {STATUS_FA[entry.status] ?? entry.status}
+        </span>
+        <span className="text-xs text-muted-foreground">نسخهٔ هم‌زمانی: {entry.version}</span>
+        {accessRes.data?.canEdit &&
+        entry.user_id === accessRes.data.userId &&
+        (entry.status === "draft" || entry.status === "returned") ? (
+          <button
+            onClick={() => onTransition("submitted")}
+            className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+          >
+            ارسال برای بررسی
+          </button>
+        ) : null}
+        {accessRes.data?.canEdit &&
+        entry.user_id !== accessRes.data.userId &&
+        entry.status === "submitted" ? (
+          <button
+            onClick={() => onTransition("approved")}
+            className="rounded-md border border-emerald-500/40 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-500/10"
+          >
+            تأیید سند
+          </button>
+        ) : null}
+        {accessRes.data?.isAdmin && entry.status === "approved" ? (
+          <button
+            onClick={() => onTransition("posted")}
+            className="rounded-md border border-primary/40 px-3 py-1.5 text-xs text-primary hover:bg-primary/10"
+          >
+            ثبت قطعی
+          </button>
+        ) : null}
+        {accessRes.data?.isAdmin && entry.status === "posted" ? (
+          <button
+            onClick={() => onTransition("locked")}
+            className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            قفل سند
+          </button>
+        ) : null}
+      </div>
+
+      {actionError ? (
+        <p className="mb-6 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          {actionError}
+        </p>
+      ) : null}
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <Stat label="تاریخ" value={entry.entry_date_fa || formatDate(entry.entry_date)} />

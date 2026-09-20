@@ -1,11 +1,13 @@
-import { createServerFn } from "@tanstack/react-start";
 import { queryOptions } from "@tanstack/react-query";
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type JournalLine = {
   id: string;
   entry_id: string;
+  account_id: string | null;
   account_code: string;
   account_name: string;
   debit: number;
@@ -16,17 +18,31 @@ export type JournalLine = {
 export type JournalEntry = {
   id: string;
   user_id: string;
+  created_by: string;
   entry_date: string;
   entry_date_fa: string | null;
   document_number: string;
   description: string | null;
   status: string;
+  version: number;
+  submitted_at: string | null;
+  submitted_by: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  posted_at: string | null;
+  posted_by: string | null;
+  locked_at: string | null;
+  locked_by: string | null;
+  returned_at: string | null;
+  returned_by: string | null;
+  return_reason: string | null;
   created_at: string;
 };
 
 export type EntryWithLines = JournalEntry & { journal_lines: JournalLine[] };
 
 export type LineInput = {
+  account_id?: string | null;
   account_code: string;
   account_name: string;
   debit: number;
@@ -34,9 +50,41 @@ export type LineInput = {
   description?: string | null;
 };
 
+export type TransitionTarget =
+  "submitted" | "returned" | "approved" | "posted" | "locked" | "reversed";
+
+const lineSchema = z.object({
+  account_id: z.string().uuid().nullable().optional(),
+  account_code: z.string().trim().min(1).max(64),
+  account_name: z.string().trim().min(1).max(200),
+  debit: z.number().finite().min(0),
+  credit: z.number().finite().min(0),
+  description: z.string().max(1000).nullable().optional(),
+});
+
+const createEntrySchema = z.object({
+  entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  entry_date_fa: z.string().max(32).nullable().optional(),
+  document_number: z.string().trim().min(1).max(64),
+  description: z.string().max(2000).nullable().optional(),
+  lines: z.array(lineSchema).min(2),
+});
+
+const transitionSchema = z.object({
+  id: z.string().uuid(),
+  version: z.number().int().positive(),
+  target: z.enum(["submitted", "returned", "approved", "posted", "locked", "reversed"]),
+  reason: z.string().max(1000).nullable().optional(),
+});
+
 const ENTRY_COLS =
-  "id, user_id, entry_date, entry_date_fa, document_number, description, status, created_at";
-const LINE_COLS = "id, entry_id, account_code, account_name, debit, credit, description";
+  "id, user_id, created_by, entry_date, entry_date_fa, document_number, description, status, version, submitted_at, submitted_by, approved_at, approved_by, posted_at, posted_by, locked_at, locked_by, returned_at, returned_by, return_reason, created_at";
+const LINE_COLS =
+  "id, entry_id, account_id, account_code, account_name, debit, credit, description";
+
+function asEntry(value: unknown): JournalEntry {
+  return value as JournalEntry;
+}
 
 export const getMyAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -69,7 +117,7 @@ export const listEntries = createServerFn({ method: "GET" })
 
 export const getEntry = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => input)
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("journal_entries")
@@ -82,63 +130,53 @@ export const getEntry = createServerFn({ method: "GET" })
 
 export const createEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      entry_date: string;
-      entry_date_fa?: string | null;
-      document_number: string;
-      description?: string | null;
-      status: string;
-      lines: LineInput[];
-    }) => input,
-  )
+  .validator(createEntrySchema)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { data: entryId, error } = await context.supabase.rpc("create_journal_entry", {
+      p_description: data.description ?? null,
+      p_document_number: data.document_number,
+      p_entry_date: data.entry_date,
+      p_entry_date_fa: data.entry_date_fa ?? null,
+      p_lines: data.lines,
+    });
 
-    const totalDebit = data.lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-    const totalCredit = data.lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
-    if (data.lines.length < 2) {
-      return { id: null, error: "هر سند باید دست‌کم دو سطر داشته باشد." };
+    if (error || !entryId) {
+      return { id: null, error: error?.message ?? "ثبت پیش‌نویس سند ممکن نشد." };
     }
-    if (Math.round((totalDebit - totalCredit) * 100) !== 0) {
-      return { id: null, error: "جمع بدهکار و بستانکار سند برابر نیست." };
+    return { id: entryId as string, error: null as string | null };
+  });
+
+export const transitionEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(transitionSchema)
+  .handler(async ({ data, context }) => {
+    const reason = data.reason ?? null;
+    const rpcArgs = { p_entry_id: data.id, p_expected_version: data.version };
+    const result =
+      data.target === "submitted"
+        ? await context.supabase.rpc("submit_journal_entry", rpcArgs)
+        : data.target === "returned"
+          ? await context.supabase.rpc("return_journal_entry", { ...rpcArgs, p_reason: reason })
+          : data.target === "approved"
+            ? await context.supabase.rpc("approve_journal_entry", rpcArgs)
+            : data.target === "posted"
+              ? await context.supabase.rpc("post_journal_entry", rpcArgs)
+              : data.target === "locked"
+                ? await context.supabase.rpc("lock_journal_entry", rpcArgs)
+                : await context.supabase.rpc("reverse_journal_entry", {
+                    ...rpcArgs,
+                    p_reason: reason,
+                  });
+
+    if (result.error || !result.data) {
+      return { entry: null, error: result.error?.message ?? "تغییر وضعیت سند ممکن نشد." };
     }
-
-    const { data: entry, error } = await supabase
-      .from("journal_entries")
-      .insert({
-        user_id: userId,
-        entry_date: data.entry_date,
-        entry_date_fa: data.entry_date_fa ?? null,
-        document_number: data.document_number,
-        description: data.description ?? null,
-        status: data.status,
-      })
-      .select("id")
-      .single();
-    if (error || !entry) return { id: null, error: error?.message ?? "ثبت سند ممکن نشد." };
-
-    const { error: lineError } = await supabase.from("journal_lines").insert(
-      data.lines.map((l) => ({
-        entry_id: entry.id,
-        account_code: l.account_code,
-        account_name: l.account_name,
-        debit: Number(l.debit) || 0,
-        credit: Number(l.credit) || 0,
-        description: l.description ?? null,
-      })),
-    );
-    if (lineError) {
-      await supabase.from("journal_entries").delete().eq("id", entry.id);
-      return { id: null, error: lineError.message };
-    }
-
-    return { id: entry.id as string, error: null as string | null };
+    return { entry: asEntry(result.data), error: null as string | null };
   });
 
 export const deleteEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => input)
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("journal_entries").delete().eq("id", data.id);
     return { error: error?.message ?? null };

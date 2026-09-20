@@ -148,15 +148,140 @@ $$;
 REVOKE ALL ON FUNCTION public.write_audit_event(TEXT, TEXT, UUID, JSONB, JSONB, TEXT, TEXT, JSONB)
   FROM PUBLIC, anon, authenticated;
 
+CREATE OR REPLACE FUNCTION public.create_journal_entry(
+  p_entry_date DATE,
+  p_entry_date_fa TEXT,
+  p_document_number TEXT,
+  p_description TEXT,
+  p_lines JSONB
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_entry_id UUID;
+  v_user_id UUID := auth.uid();
+  v_line_count INTEGER;
+  v_total_debit NUMERIC(18, 2);
+  v_total_credit NUMERIC(18, 2);
+  v_before JSONB;
+  v_after JSONB;
+BEGIN
+  IF v_user_id IS NULL OR NOT public.can_edit(v_user_id) THEN
+    RAISE EXCEPTION 'insufficient permission' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_entry_date IS NULL OR p_document_number IS NULL OR btrim(p_document_number) = '' THEN
+    RAISE EXCEPTION 'invalid journal header' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT count(*), COALESCE(sum(x.debit), 0), COALESCE(sum(x.credit), 0)
+  INTO v_line_count, v_total_debit, v_total_credit
+  FROM jsonb_to_recordset(COALESCE(p_lines, '[]'::jsonb)) AS x(
+    account_id UUID,
+    account_code TEXT,
+    account_name TEXT,
+    debit NUMERIC,
+    credit NUMERIC,
+    description TEXT
+  );
+
+  IF v_line_count < 2 THEN
+    RAISE EXCEPTION 'journal entry requires at least two lines' USING ERRCODE = '22023';
+  END IF;
+
+  IF round(v_total_debit, 2) <= 0 OR round(v_total_debit, 2) <> round(v_total_credit, 2) THEN
+    RAISE EXCEPTION 'journal entry is not balanced' USING ERRCODE = '22023';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_to_recordset(COALESCE(p_lines, '[]'::jsonb)) AS x(
+      account_id UUID,
+      account_code TEXT,
+      account_name TEXT,
+      debit NUMERIC,
+      credit NUMERIC,
+      description TEXT
+    )
+    WHERE NULLIF(btrim(x.account_code), '') IS NULL
+      OR NULLIF(btrim(x.account_name), '') IS NULL
+      OR x.debit < 0 OR x.credit < 0
+      OR (x.debit > 0 AND x.credit > 0)
+      OR (x.debit = 0 AND x.credit = 0)
+  ) THEN
+    RAISE EXCEPTION 'invalid journal line' USING ERRCODE = '22023';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_to_recordset(COALESCE(p_lines, '[]'::jsonb)) AS x(
+      account_id UUID,
+      account_code TEXT,
+      account_name TEXT,
+      debit NUMERIC,
+      credit NUMERIC,
+      description TEXT
+    )
+    WHERE x.account_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM public.account_nodes a
+        WHERE a.id = x.account_id AND a.level = 'detail' AND a.is_active
+      )
+  ) THEN
+    RAISE EXCEPTION 'journal line references an invalid detail account' USING ERRCODE = '23514';
+  END IF;
+
+  INSERT INTO public.journal_entries (
+    user_id, created_by, entry_date, entry_date_fa, document_number, description, status
+  )
+  VALUES (
+    v_user_id, v_user_id, p_entry_date, p_entry_date_fa, btrim(p_document_number), p_description, 'draft'
+  )
+  RETURNING id INTO v_entry_id;
+
+  INSERT INTO public.journal_lines (
+    entry_id, account_id, account_code, account_name, debit, credit, description
+  )
+  SELECT
+    v_entry_id, x.account_id, btrim(x.account_code), btrim(x.account_name), x.debit, x.credit, x.description
+  FROM jsonb_to_recordset(p_lines) AS x(
+    account_id UUID,
+    account_code TEXT,
+    account_name TEXT,
+    debit NUMERIC,
+    credit NUMERIC,
+    description TEXT
+  );
+
+  SELECT to_jsonb(e) INTO v_after
+  FROM public.journal_entries e
+  WHERE e.id = v_entry_id;
+
+  PERFORM public.write_audit_event(
+    'journal.created', 'journal_entry', v_entry_id, NULL, v_after, NULL
+  );
+
+  RETURN v_entry_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_journal_entry(DATE, TEXT, TEXT, TEXT, JSONB)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_journal_entry(DATE, TEXT, TEXT, TEXT, JSONB)
+  TO authenticated;
+
 -- 4. Hierarchical chart of accounts.
--- `group` is the top level, followed by `general`, `subsidiary`, and `detail`.
+-- `group` is the top level, followed by `general`, `subsidiary`, `detail_1`, and `detail_2`.
 -- Existing journal lines remain usable until account_id is backfilled.
 CREATE TABLE IF NOT EXISTS public.account_nodes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_id UUID REFERENCES public.account_nodes(id),
   code TEXT NOT NULL,
   name TEXT NOT NULL,
-  level TEXT NOT NULL CHECK (level IN ('group', 'general', 'subsidiary', 'detail')),
+  level TEXT NOT NULL CHECK (level IN ('group', 'general', 'subsidiary', 'detail_1', 'detail_2')),
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -205,7 +330,8 @@ BEGIN
     IF (v_parent_level, NEW.level) NOT IN (
       ('group', 'general'),
       ('general', 'subsidiary'),
-      ('subsidiary', 'detail')
+      ('subsidiary', 'detail_1'),
+      ('detail_1', 'detail_2')
     ) THEN
       RAISE EXCEPTION 'invalid account hierarchy: % -> %', v_parent_level, NEW.level
         USING ERRCODE = '23514';
@@ -242,7 +368,7 @@ AS $$
 BEGIN
   IF NEW.account_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.account_nodes
-    WHERE id = NEW.account_id AND is_active = true AND level = 'detail'
+    WHERE id = NEW.account_id AND is_active = true AND level IN ('detail_1', 'detail_2')
   ) THEN
     RAISE EXCEPTION 'journal line must reference an active detail account'
       USING ERRCODE = '23514';

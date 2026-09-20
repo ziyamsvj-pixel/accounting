@@ -255,12 +255,46 @@ export type Database = {
     };
     Functions: {
       can_edit: { Args: { _user_id: string }; Returns: boolean };
+      create_journal_entry: {
+        Args: {
+          p_description: string | null;
+          p_document_number: string;
+          p_entry_date: string;
+          p_entry_date_fa: string | null;
+          p_lines: Json;
+        };
+        Returns: string;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
           _user_id: string;
         };
         Returns: boolean;
+      };
+      submit_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number };
+        Returns: Json;
+      };
+      return_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number; p_reason: string };
+        Returns: Json;
+      };
+      approve_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number };
+        Returns: Json;
+      };
+      post_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number };
+        Returns: Json;
+      };
+      lock_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number };
+        Returns: Json;
+      };
+      reverse_journal_entry: {
+        Args: { p_entry_id: string; p_expected_version: number; p_reason: string };
+        Returns: Json;
       };
     };
     Enums: {
