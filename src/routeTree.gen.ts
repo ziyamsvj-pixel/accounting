@@ -10,14 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AllocationRouteImport } from './routes/allocation'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SourcesRouteImport } from './routes/sources'
+import { Route as AuthenticatedLedgerRouteImport } from './routes/_authenticated/ledger'
 import { Route as RulesIndexRouteImport } from './routes/rules.index'
 import { Route as RulesRuleIdRouteImport } from './routes/rules.$ruleId'
+import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents.index'
+import { Route as AuthenticatedDocumentsEntryIdRouteImport } from './routes/_authenticated/documents.$entryId'
+import { Route as AuthenticatedDocumentsNewRouteImport } from './routes/_authenticated/documents.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AllocationRoute = AllocationRouteImport.update({
@@ -25,10 +35,20 @@ const AllocationRoute = AllocationRouteImport.update({
   path: '/allocation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SourcesRoute = SourcesRouteImport.update({
   id: '/sources',
   path: '/sources',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedLedgerRoute = AuthenticatedLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const RulesIndexRoute = RulesIndexRouteImport.update({
   id: '/rules/',
@@ -40,41 +60,108 @@ const RulesRuleIdRoute = RulesRuleIdRouteImport.update({
   path: '/rules/$ruleId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDocumentsIndexRoute =
+  AuthenticatedDocumentsIndexRouteImport.update({
+    id: '/documents/',
+    path: '/documents/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsEntryIdRoute =
+  AuthenticatedDocumentsEntryIdRouteImport.update({
+    id: '/documents/$entryId',
+    path: '/documents/$entryId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentsNewRoute =
+  AuthenticatedDocumentsNewRouteImport.update({
+    id: '/documents/new',
+    path: '/documents/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/allocation': typeof AllocationRoute
+  '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/ledger': typeof AuthenticatedLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
+  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/documents/new': typeof AuthenticatedDocumentsNewRoute
+  '/documents/': typeof AuthenticatedDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/allocation': typeof AllocationRoute
+  '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/ledger': typeof AuthenticatedLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules': typeof RulesIndexRoute
+  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/documents/new': typeof AuthenticatedDocumentsNewRoute
+  '/documents': typeof AuthenticatedDocumentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/allocation': typeof AllocationRoute
+  '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/_authenticated/ledger': typeof AuthenticatedLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
+  '/_authenticated/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/_authenticated/documents/new': typeof AuthenticatedDocumentsNewRoute
+  '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/allocation' | '/sources' | '/rules/$ruleId' | '/rules/'
+  fullPaths:
+    | '/'
+    | '/allocation'
+    | '/auth'
+    | '/sources'
+    | '/ledger'
+    | '/rules/$ruleId'
+    | '/rules/'
+    | '/documents/$entryId'
+    | '/documents/new'
+    | '/documents/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/allocation' | '/sources' | '/rules/$ruleId' | '/rules'
+  to:
+    | '/'
+    | '/allocation'
+    | '/auth'
+    | '/sources'
+    | '/ledger'
+    | '/rules/$ruleId'
+    | '/rules'
+    | '/documents/$entryId'
+    | '/documents/new'
+    | '/documents'
   id:
-    '__root__' | '/' | '/allocation' | '/sources' | '/rules/$ruleId' | '/rules/'
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/allocation'
+    | '/auth'
+    | '/sources'
+    | '/_authenticated/ledger'
+    | '/rules/$ruleId'
+    | '/rules/'
+    | '/_authenticated/documents/$entryId'
+    | '/_authenticated/documents/new'
+    | '/_authenticated/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AllocationRoute: typeof AllocationRoute
+  AuthRoute: typeof AuthRoute
   SourcesRoute: typeof SourcesRoute
   RulesRuleIdRoute: typeof RulesRuleIdRoute
   RulesIndexRoute: typeof RulesIndexRoute
@@ -89,11 +176,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/allocation': {
       id: '/allocation'
       path: '/allocation'
       fullPath: '/allocation'
       preLoaderRoute: typeof AllocationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sources': {
@@ -102,6 +203,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sources'
       preLoaderRoute: typeof SourcesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ledger': {
+      id: '/_authenticated/ledger'
+      path: '/ledger'
+      fullPath: '/ledger'
+      preLoaderRoute: typeof AuthenticatedLedgerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/rules/': {
       id: '/rules/'
@@ -117,12 +225,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RulesRuleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/documents/': {
+      id: '/_authenticated/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof AuthenticatedDocumentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/$entryId': {
+      id: '/_authenticated/documents/$entryId'
+      path: '/documents/$entryId'
+      fullPath: '/documents/$entryId'
+      preLoaderRoute: typeof AuthenticatedDocumentsEntryIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documents/new': {
+      id: '/_authenticated/documents/new'
+      path: '/documents/new'
+      fullPath: '/documents/new'
+      preLoaderRoute: typeof AuthenticatedDocumentsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLedgerRoute: typeof AuthenticatedLedgerRoute
+  AuthenticatedDocumentsEntryIdRoute: typeof AuthenticatedDocumentsEntryIdRoute
+  AuthenticatedDocumentsNewRoute: typeof AuthenticatedDocumentsNewRoute
+  AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLedgerRoute: AuthenticatedLedgerRoute,
+  AuthenticatedDocumentsEntryIdRoute: AuthenticatedDocumentsEntryIdRoute,
+  AuthenticatedDocumentsNewRoute: AuthenticatedDocumentsNewRoute,
+  AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AllocationRoute: AllocationRoute,
+  AuthRoute: AuthRoute,
   SourcesRoute: SourcesRoute,
   RulesRuleIdRoute: RulesRuleIdRoute,
   RulesIndexRoute: RulesIndexRoute,

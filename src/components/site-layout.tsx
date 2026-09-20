@@ -1,12 +1,56 @@
-import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 const NAV = [
   { to: "/", label: "خانه" },
   { to: "/rules", label: "قواعد انطباق" },
   { to: "/sources", label: "منابع مقرراتی" },
   { to: "/allocation", label: "تخصیص هزینه" },
+  { to: "/documents", label: "اسناد حسابداری" },
+  { to: "/ledger", label: "دفتر کل" },
 ] as const;
+
+function AuthNav() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setEmail(data.session?.user.email ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (!email) {
+    return (
+      <Link
+        to="/auth"
+        className="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+      >
+        ورود / ثبت‌نام
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden text-xs text-muted-foreground sm:inline">{email}</span>
+      <button
+        type="button"
+        onClick={async () => {
+          await supabase.auth.signOut();
+          navigate({ to: "/" });
+        }}
+        className="rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+      >
+        خروج
+      </button>
+    </div>
+  );
+}
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
@@ -31,6 +75,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
+          <AuthNav />
         </div>
       </header>
 

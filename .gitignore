@@ -30,8 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Local environment and generated metadata
-.env
-.env.*
-!.env.example
