@@ -53,3 +53,11 @@
 **چرا:** پروژه هیچ‌کدام از این مستندات را نداشت، در حالی که قوانین مخزن حاکمیت آن‌ها را لازم می‌داند.
 
 **نیاز به بررسی توسعه‌دهنده؟** خیر. هیچ بخشی از خود برنامه تغییر نکرده و ظاهر و عملکرد سایت دست‌نخورده است.
+
+## PROP-2026-002 — پژوهش OSS و نقشه‌راه Accounting Core
+
+**تاریخ:** ۲۰۲۶-۱۰-۲۶
+**نوع:** پژوهش معماری، پیشنهاد محصول و متن ارائه مدیریتی
+**وضعیت:** پیش‌نویس برای تصمیم مالک
+
+گزارش فارسی `docs/research/OSS_LANDSCAPE_AND_ROADMAP.md` ایجاد شد. در این گزارش ERPNext، Frappe Books و Blnk از نظر معماری، ledger، Company، UX، precision، workflow و audit با نیازهای Accounting Core مقایسه شدند. رکورد `PROP-2026-002` در `project-governance/PROPOSALS.md` و متن ارائه در `docs/research/OSS-LANDSCAPE-PRESENTATION-SCRIPT-FA.md` ثبت شد. این تغییر فقط مستنداتی است و هیچ Schema، Migration، Authentication، API عمومی یا رفتار اجرایی محصول را تغییر نمی‌دهد.
