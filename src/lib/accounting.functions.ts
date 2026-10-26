@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { queryOptions } from "@tanstack/react-query";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { checkPostedLineEnrichment, isPostedStatus, validateLegacyLines } from "@/lib/legacy-journal-guard";
 
 export type JournalLine = {
   id: string;
@@ -107,14 +108,9 @@ export const createEntry = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const totalDebit = data.lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-    const totalCredit = data.lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
-    if (data.lines.length < 2) {
-      return { id: null, error: "هر سند باید دست‌کم دو سطر داشته باشد." };
-    }
-    if (Math.round((totalDebit - totalCredit) * 100) !== 0) {
-      return { id: null, error: "جمع بدهکار و بستانکار سند برابر نیست." };
-    }
+    // کنترل قطعی با مبلغ دقیق (bigint)، نه جمع اعشاری جاوااسکریپت.
+    const invalid = validateLegacyLines(data.lines);
+    if (invalid) return { id: null, error: invalid };
 
     const { data: entry, error } = await supabase
       .from("journal_entries")
@@ -216,6 +212,23 @@ export const updateEntryLines = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const { data: entry, error: entryError } = await supabase
+      .from("journal_entries")
+      .select(`status, journal_lines(${LINE_COLS})`)
+      .eq("id", data.entryId)
+      .maybeSingle();
+    if (entryError) return { error: entryError.message };
+    if (!entry) return { error: "سند یافت نشد." };
+    if (isPostedStatus(entry.status as string)) {
+      // سند Posted: فقط تکمیل معین/تفصیلی خالی (اصل «سند Posted قابل ویرایش مستقیم نیست»).
+      const currentLines = (entry.journal_lines ?? []) as unknown as JournalLine[];
+      for (const line of data.lines) {
+        const current = currentLines.find((l) => l.id === line.id);
+        if (!current) return { error: "سطر موردنظر در این سند یافت نشد." };
+        const blocked = checkPostedLineEnrichment(current, line);
+        if (blocked) return { error: blocked };
+      }
+    }
     for (const line of data.lines) {
       const { error } = await supabase
         .from("journal_lines")
@@ -240,10 +253,20 @@ export const deleteEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
+    const { data: entry, error: readError } = await context.supabase
+      .from("journal_entries")
+      .select("status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readError) return { error: readError.message };
+    if (entry && isPostedStatus(entry.status as string)) {
+      return { error: "سند ثبت‌قطعی‌شده قابل حذف نیست؛ برای اصلاح، سند برگشتی ثبت کنید." };
+    }
     const { error } = await context.supabase
       .from("journal_entries")
       .delete()
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .neq("status", "posted");
     return { error: error?.message ?? null };
   });
 

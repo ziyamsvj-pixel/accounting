@@ -5,6 +5,8 @@ import { z } from "zod";
 
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 
+import { validateLegacyLines } from "@/lib/legacy-journal-guard";
+
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
 
@@ -114,9 +116,8 @@ export async function generateJournalDraft(
     if (lines.length < 2) {
       return { draft: null, error: "سند پیشنهادی کمتر از دو سطر معتبر دارد؛ شرح را دقیق‌تر بنویسید." };
     }
-    const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
-    const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
-    if (Math.round((totalDebit - totalCredit) * 100) !== 0) {
+    // توازن با مبلغ دقیق bigint بررسی می‌شود؛ پیشنهاد AI هرگز بدون این کنترل به فرم نمی‌رسد.
+    if (validateLegacyLines(lines) !== null) {
       return {
         draft: null,
         error: "سند پیشنهادی متوازن نیست؛ لطفاً دوباره تلاش کنید یا سند را دستی ثبت کنید.",
