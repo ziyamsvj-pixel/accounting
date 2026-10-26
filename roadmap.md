@@ -9,7 +9,7 @@
 - [x] Runtime ایجنت‌ها با اخطار غیرمسدودکننده + تست
 - [x] کنترل توازن دقیق و حفاظت از سند posted در برنامهٔ فعلی
 - [ ] تصمیم‌های مدیریت (D-007)
-- [ ] F2: Migration، RLS چندسازمانی، Backup/Restore (نیازمند تأیید صریح)
+- [ ] F2: Migration، RLS چندسازمانی، Backup/Restore (نیازمند تأیید صریح). طرح و SQL تست‌شده آماده است و منتظر تأیید است (D-008، `docs/architecture/F2_DATABASE_CHANGE_PLAN_FA.md`)
 - [ ] F3: جدول‌های ارز و تسعیر
 - [ ] F4: Reconciliation زمان‌بندی‌شده و API
 - [ ] F5: فروش، خرید، انبار و Compliance
