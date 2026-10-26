@@ -14,7 +14,7 @@
 
 - **F0** Domain و invariantها: انجام شد.
 - **F1** Workflow و Posting: انجام شد (درحافظه).
-- **F2** Persistence، RLS و دفاتر: پس از تأیید مالک، در PR دیتابیسی جداگانه همراه با تست RLS، Backup، Restore و Rollback.
+- **F2** Persistence، RLS و دفاتر: پس از تأیید مالک، در PR دیتابیسی جداگانه همراه با تست RLS، Backup، Restore و Rollback. وضعیت: طرح و SQL پیش‌نویس با ۲۱ تست PGlite آماده است و منتظر تأیید است (D-008).
 - **F3** ارز، Dimensions و FX: جدول‌ها پس از F2.
 - **F4** Reconciliation و API.
 - **F5** فروش، خرید، انبار و Compliance.
