@@ -88,6 +88,9 @@ export class InMemoryUnitOfWork implements UnitOfWork {
           }
           s.journals.set(doc.documentId, clone(doc));
         },
+        async findReversalsOf(originalId) {
+          return [...s.journals.values()].filter((d) => d.reversalOfId === originalId).map(clone);
+        },
         async listPosted(companyId, periodId) {
           return [...s.journals.values()]
             .filter(

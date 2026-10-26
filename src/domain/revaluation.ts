@@ -1,7 +1,7 @@
 import type { CurrencyRegistry } from "./currency";
 import { DomainValidationError } from "./errors";
 import type { DocumentRateSnapshot, ExchangeRate } from "./fx";
-import { convert } from "./fx";
+import { convert, validateRate } from "./fx";
 import { hashOf } from "./hash";
 import type { JournalLine } from "./journal";
 import type { RoundingMode } from "./money";
@@ -77,13 +77,30 @@ export function computeRevaluation(input: {
 }): RevaluationRun {
   const lines: RevaluationLine[] = [];
   const journalLines: JournalLine[] = [];
-  for (const item of [...input.items].sort((a, b) => (a.itemId < b.itemId ? -1 : 1))) {
+  const ids = new Set<string>();
+  for (const it of input.items) {
+    if (ids.has(it.itemId))
+      throw new DomainValidationError("REVALUATION_INVALID", `قلم ${it.itemId} تکراری است.`, {
+        itemId: it.itemId,
+      });
+    ids.add(it.itemId);
+  }
+  const sorted = [...input.items].sort((a, b) =>
+    a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0,
+  );
+  const validated = new Set<string>();
+  for (const item of sorted) {
     const rate = input.closingRates.get(item.currencyCode);
     if (!rate)
       throw new DomainValidationError(
         "RATE_NOT_EFFECTIVE",
         `نرخ پایان دوره برای ${item.currencyCode} موجود نیست.`,
       );
+    if (!validated.has(item.currencyCode)) {
+      // نرخ Draft، باطل‌شده یا خارج از تاریخ ارزیابی نباید مبلغ تسعیر بسازد.
+      validateRate(rate, { at: input.valuationDate });
+      validated.add(item.currencyCode);
+    }
     const snap = input.closingSnapshots.get(item.currencyCode);
     const closing = convert(
       {
@@ -98,6 +115,18 @@ export function computeRevaluation(input: {
     ).targetAmountMinor;
     const diff = closing - item.carryingBaseMinor;
     if (diff === 0n) continue;
+    if (
+      !snap ||
+      snap.rateId !== rate.id ||
+      snap.baseUnits !== rate.baseUnits ||
+      snap.quoteUnits !== rate.quoteUnits
+    ) {
+      throw new DomainValidationError(
+        "FOREIGN_LINE_MISSING_RATE",
+        `snapshot نرخ پایان دوره برای ${item.currencyCode} موجود نیست یا با نرخ ${rate.id} نمی‌خواند.`,
+        { currencyCode: item.currencyCode, rateId: rate.id, snapshotId: snap?.id ?? null },
+      );
+    }
     const classification = diff > 0n ? "UNREALIZED_GAIN" : "UNREALIZED_LOSS";
     lines.push({
       itemId: item.itemId,
@@ -118,7 +147,7 @@ export function computeRevaluation(input: {
       foreignAmountMinor: 0n,
       debitBaseMinor: diff > 0n ? abs : 0n,
       creditBaseMinor: diff < 0n ? abs : 0n,
-      rateSnapshotId: snap?.id ?? null,
+      rateSnapshotId: snap.id,
       partyId: item.partyId,
       description: `تسعیر ${item.currencyCode} - ${item.itemId}`,
     });
@@ -145,7 +174,7 @@ export function computeRevaluation(input: {
     closingRatePolicyVersion: input.closingRatePolicyVersion,
     lines,
     journalLines,
-    sourceBalanceHash: hashOf(input.items),
+    sourceBalanceHash: hashOf(sorted),
   };
 }
 

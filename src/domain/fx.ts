@@ -65,10 +65,17 @@ export function validateRate(rate: ExchangeRate, opts: RateValidationOptions): v
     );
   }
   const at = Date.parse(opts.at);
-  if (
-    Date.parse(rate.validFrom) > at ||
-    (rate.validTo !== null && Date.parse(rate.validTo) <= at)
-  ) {
+  const from = Date.parse(rate.validFrom);
+  const to = rate.validTo === null ? null : Date.parse(rate.validTo);
+  // تاریخ نامعتبر NaN می‌دهد و هر مقایسه‌ای با NaN false است؛ پس باید صریحاً رد شود.
+  if (Number.isNaN(at) || Number.isNaN(from) || (to !== null && Number.isNaN(to))) {
+    throw new DomainValidationError(
+      "RATE_NOT_EFFECTIVE",
+      `تاریخ اعتبار نرخ ${rate.id} یا تاریخ مبنا قابل تفسیر نیست.`,
+      { rateId: rate.id, at: opts.at, validFrom: rate.validFrom, validTo: rate.validTo },
+    );
+  }
+  if (from > at || (to !== null && to <= at)) {
     throw new DomainValidationError(
       "RATE_NOT_EFFECTIVE",
       `نرخ ${rate.id} در تاریخ ${opts.at} معتبر نیست.`,

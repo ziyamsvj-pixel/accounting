@@ -57,6 +57,11 @@ export interface JournalRepository {
   /** به‌روزرسانی با قفل خوش‌بینانه: فقط اگر نسخهٔ فعلی = expectedVersion. */
   update(doc: JournalDocument, expectedVersion: number): Promise<void>;
   listPosted(companyId: string, fiscalPeriodId: string): Promise<JournalDocument[]>;
+  /**
+   * اسناد برگشتیِ یک سند اصلی (هر وضعیتی). در پیاده‌سازی پایگاه‌داده باید با قید یکتای
+   * (reversal_of_id) پشتیبانی شود تا دو برگشت هم‌زمان ممکن نباشد.
+   */
+  findReversalsOf(originalId: string): Promise<JournalDocument[]>;
 }
 
 export interface FiscalPeriodRepository {

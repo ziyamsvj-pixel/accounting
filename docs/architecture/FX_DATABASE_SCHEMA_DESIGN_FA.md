@@ -221,20 +221,33 @@ journal_entries (
   fiscal_period_id uuid not null,
   source_document_type text not null,
   source_document_id uuid,
-  document_number text not null,
+  draft_number text not null,            -- شمارهٔ موقت Draft
+  document_number text,                  -- null تا Post؛ شمارهٔ قطعی یکتا و بی‌فاصله
   status text not null,                  -- DRAFT ... POSTED ... REVERSED
   document_version integer not null default 1,
   idempotency_key text not null,
   entry_date date not null,
   posted_at timestamptz,
   posted_by uuid,
-  content_hash text not null,
-  reversal_of_id uuid,
+  content_hash text,                     -- هنگام Post محاسبه می‌شود
+  reversal_of_id uuid references journal_entries(id),
+  reversed_by_id uuid references journal_entries(id),
   created_by uuid not null,
   created_at timestamptz not null,
-  unique (company_id, fiscal_period_id, idempotency_key),
-  unique (company_id, fiscal_period_id, document_number, document_version)
+  -- کلید idempotency در سرویس به Tenant + کاربر + Command محدود است؛ قید پایگاه‌داده هم باید کاربر را داشته باشد.
+  -- این قید از سرویس سخت‌گیرانه‌تر است: یک کاربر نباید یک کلید را برای دو Command متفاوت به کار ببرد.
+  unique (company_id, created_by, idempotency_key)
 )
+
+-- شمارهٔ قطعی در Company و دوره یکتاست (نسخهٔ سند جزء کلید نیست).
+create unique index ux_journal_entries_document_number
+  on journal_entries (company_id, fiscal_period_id, document_number)
+  where document_number is not null;
+
+-- هر سند اصلی حداکثر یک سند برگشتی دارد (جلوگیری از برگشت دوباره در Race).
+create unique index ux_journal_entries_reversal_of
+  on journal_entries (reversal_of_id)
+  where reversal_of_id is not null;
 
 fx_revaluation_runs (
   id uuid primary key,

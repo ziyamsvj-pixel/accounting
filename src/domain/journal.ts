@@ -202,6 +202,15 @@ export function checkLineInvariants(
           message: `سطر ${i + 1}: حساب ${acc.code} غیرفعال است.`,
           lineIndex: i,
         });
+      // حساب ارزی فقط سطر هم‌ارز می‌پذیرد و حساب بدون ارز (null) فقط ارز عملکردی؛
+      // وگرنه مبلغ ارزی لازم برای تسعیر و تسویه گم می‌شود یا روی حساب نادرست می‌نشیند.
+      const accountCurrency = acc.currencyCode ?? doc.baseCurrency;
+      if (accountCurrency !== l.currencyCode)
+        v.push({
+          code: "CURRENCY_MISMATCH",
+          message: `سطر ${i + 1}: ارز سطر (${l.currencyCode}) با ارز حساب ${acc.code} (${accountCurrency}) یکسان نیست.`,
+          lineIndex: i,
+        });
     }
     let lineCurrencyOk = true;
     try {

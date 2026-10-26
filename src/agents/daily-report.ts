@@ -42,7 +42,8 @@ export function buildDailyManagerReport(
       (a, b) =>
         Number(b.blocking) - Number(a.blocking) ||
         RANK[a.severity] - RANK[b.severity] ||
-        (a.createdAt < b.createdAt ? -1 : 1),
+        (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0) ||
+        (a.findingId < b.findingId ? -1 : a.findingId > b.findingId ? 1 : 0),
     )
     .slice(0, top)
     .map((f) => ({

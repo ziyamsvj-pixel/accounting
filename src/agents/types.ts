@@ -107,8 +107,13 @@ export interface AgentRunRecord {
 
 export interface FindingRepository {
   /** وجود یافته با همین کلید در هر وضعیتی (برای جلوگیری از ساخت دوبارهٔ یافتهٔ ردشده). */
-  findByDedupeKey(dedupeKey: string): Promise<PersistedFinding | null>;
-  save(f: PersistedFinding): Promise<void>;
+  findByDedupeKey(companyId: string, dedupeKey: string): Promise<PersistedFinding | null>;
+  /**
+   * ذخیرهٔ اتمیک: فقط اگر یافته‌ای با همان (companyId, dedupeKey) در هیچ وضعیتی نباشد.
+   * در پایگاه‌داده با قید یکتای (company_id, dedupe_key) و ON CONFLICT DO NOTHING پیاده می‌شود.
+   * @returns true اگر درج شد.
+   */
+  saveIfAbsent(f: PersistedFinding): Promise<boolean>;
   saveRun(r: AgentRunRecord): Promise<void>;
   listOpen(companyId: string): Promise<PersistedFinding[]>;
 }
