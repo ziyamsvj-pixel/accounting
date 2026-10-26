@@ -228,6 +228,9 @@ export const updateEntryLines = createServerFn({ method: "POST" })
     if (isPostedStatus(entry.status as string)) {
       // سند Posted: فقط تکمیل معین/تفصیلی خالی (اصل «سند Posted قابل ویرایش مستقیم نیست»).
       const currentLines = (entry.journal_lines ?? []) as unknown as JournalLine[];
+      if (new Set(data.lines.map((l) => l.id)).size !== data.lines.length) {
+        return { error: "یک سطر بیش از یک‌بار در درخواست آمده است." };
+      }
       const plans: { lineId: string; fills: { key: ClassificationKey; value: string }[] }[] = [];
       for (const line of data.lines) {
         const current = currentLines.find((l) => l.id === line.id);
@@ -238,6 +241,9 @@ export const updateEntryLines = createServerFn({ method: "POST" })
       }
       // نوشتن شرطی و اتمیک برای هر فیلد: فقط اگر هنوز خالی باشد. اگر درخواست هم‌زمان دیگری
       // زودتر مقدار را پر کرده باشد، هیچ سطری به‌روز نمی‌شود و بازنویسی رخ نمی‌دهد.
+      // محدودیت: Supabase JS چند Query را در یک تراکنش نمی‌گذارد؛ اگر وسط کار خطا رخ دهد،
+      // تکمیل‌های قبلی می‌مانند (که همه فقط پرکردن فیلد خالی و معتبرند). اتمیک‌بودن کل درخواست
+      // نیازمند تابع RPC/Migration است و پس از تأیید مالک (D-007) انجام می‌شود.
       for (const p of plans) {
         for (const f of p.fills) {
           const { data: updated, error } = await supabase

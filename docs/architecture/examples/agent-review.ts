@@ -9,7 +9,8 @@
  */
 
 export type Severity = "INFO" | "WARNING" | "HIGH_RISK" | "BLOCKING";
-export type FindingStatus = "OPEN" | "ACKNOWLEDGED" | "IN_PROGRESS" | "RESOLVED" | "DISMISSED" | "ESCALATED";
+export type FindingStatus =
+  "OPEN" | "ACKNOWLEDGED" | "IN_PROGRESS" | "RESOLVED" | "DISMISSED" | "ESCALATED";
 
 export interface Evidence {
   field: string;
@@ -110,9 +111,13 @@ export interface LedgerAccountQuery {
 
 export interface LedgerReader {
   /** جمع حساب در Read Model دفتر (projection) برای کل دوره. */
-  getProjectionTotals(input: LedgerAccountQuery): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
+  getProjectionTotals(
+    input: LedgerAccountQuery,
+  ): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
   /** بازسازی همان جمع از کل اسناد Posted در Journal (منبع حقیقت) برای کل دوره. */
-  rebuildJournalTotals(input: LedgerAccountQuery): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
+  rebuildJournalTotals(
+    input: LedgerAccountQuery,
+  ): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
 }
 
 export interface IdFactory {
@@ -151,7 +156,10 @@ export function validatePostingInvariants(snapshot: DocumentSnapshot): void {
   }
 
   if (snapshot.status === "LOCKED" || snapshot.status === "REVERSED") {
-    throw new DomainValidationError("INVALID_DOCUMENT_STATUS", "وضعیت سند اجازهٔ بررسی برای ثبت جدید را نمی‌دهد.");
+    throw new DomainValidationError(
+      "INVALID_DOCUMENT_STATUS",
+      "وضعیت سند اجازهٔ بررسی برای ثبت جدید را نمی‌دهد.",
+    );
   }
 }
 
@@ -178,7 +186,9 @@ export class AccountingReviewAgent implements Agent {
     const { snapshot } = context;
     const findings: AgentFinding[] = [];
 
-    const foreignLines = snapshot.lines.filter((line) => line.currencyCode !== snapshot.baseCurrencyCode);
+    const foreignLines = snapshot.lines.filter(
+      (line) => line.currencyCode !== snapshot.baseCurrencyCode,
+    );
     if (foreignLines.length > 0 && snapshot.currencyCode === snapshot.baseCurrencyCode) {
       findings.push(
         warning(context, {
@@ -187,15 +197,26 @@ export class AccountingReviewAgent implements Agent {
           confidence: 0.98,
           title: "ارز سطر با ارز سند همسان نیست",
           explanation: "برای سطر ارزی، ارز سند یا valuation context باید صریح ثبت شود.",
-          evidence: [{ field: "lines.currencyCode", observedValue: foreignLines[0].currencyCode, source: "DOCUMENT" }],
-          suggestedActions: [{ code: "REVIEW_CURRENCY", label: "بررسی ارز و نرخ سند", requiresHumanApproval: true }],
+          evidence: [
+            {
+              field: "lines.currencyCode",
+              observedValue: foreignLines[0].currencyCode,
+              source: "DOCUMENT",
+            },
+          ],
+          suggestedActions: [
+            { code: "REVIEW_CURRENCY", label: "بررسی ارز و نرخ سند", requiresHumanApproval: true },
+          ],
           sourceRefs: [],
           expiresAt: null,
         }),
       );
     }
 
-    if (snapshot.attachmentIds.length === 0 && ["PURCHASE_INVOICE", "EXPENSE"].includes(snapshot.documentType)) {
+    if (
+      snapshot.attachmentIds.length === 0 &&
+      ["PURCHASE_INVOICE", "EXPENSE"].includes(snapshot.documentType)
+    ) {
       findings.push(
         warning(context, {
           code: "MISSING_SUPPORTING_ATTACHMENT",
@@ -204,7 +225,13 @@ export class AccountingReviewAgent implements Agent {
           title: "پیوست پشتیبان ثبت نشده است",
           explanation: "برای این نوع سند، پیوست یا توضیح دلیل نبود پیوست پیشنهاد می‌شود.",
           evidence: [{ field: "attachmentIds", observedValue: 0, source: "DOCUMENT" }],
-          suggestedActions: [{ code: "ADD_ATTACHMENT", label: "افزودن فاکتور یا رسید", requiresHumanApproval: false }],
+          suggestedActions: [
+            {
+              code: "ADD_ATTACHMENT",
+              label: "افزودن فاکتور یا رسید",
+              requiresHumanApproval: false,
+            },
+          ],
           sourceRefs: [],
           expiresAt: null,
         }),
@@ -220,7 +247,8 @@ export class ComplianceReviewAgent implements Agent {
 
   async review(context: AgentRunContext): Promise<AgentFinding[]> {
     const { snapshot } = context;
-    if (snapshot.documentType !== "PURCHASE_INVOICE" && snapshot.documentType !== "EXPENSE") return [];
+    if (snapshot.documentType !== "PURCHASE_INVOICE" && snapshot.documentType !== "EXPENSE")
+      return [];
 
     // نمونهٔ غیرقطعی: Rule Pack واقعی باید از منبع رسمی و تاریخ اثر خوانده شود.
     return [
@@ -229,9 +257,18 @@ export class ComplianceReviewAgent implements Agent {
         severity: "INFO",
         confidence: null,
         title: "بررسی مقرراتی نیازمند تأیید منبع است",
-        explanation: "ایجنت نمی‌تواند از روی متن سند به‌تنهایی شمول مالیاتی یا اعتبار مالیات را قطعی اعلام کند.",
-        evidence: [{ field: "documentType", observedValue: snapshot.documentType, source: "DOCUMENT" }],
-        suggestedActions: [{ code: "OPEN_RULE_REVIEW", label: "بازکردن Rule Pack و منبع رسمی", requiresHumanApproval: true }],
+        explanation:
+          "ایجنت نمی‌تواند از روی متن سند به‌تنهایی شمول مالیاتی یا اعتبار مالیات را قطعی اعلام کند.",
+        evidence: [
+          { field: "documentType", observedValue: snapshot.documentType, source: "DOCUMENT" },
+        ],
+        suggestedActions: [
+          {
+            code: "OPEN_RULE_REVIEW",
+            label: "بازکردن Rule Pack و منبع رسمی",
+            requiresHumanApproval: true,
+          },
+        ],
         sourceRefs: [],
         expiresAt: null,
       }),
@@ -261,19 +298,39 @@ export class LedgerIntegrityAgent implements Agent {
         this.ledger.getProjectionTotals(query),
       ]);
 
-      if (expected.debitMinor !== actual.debitMinor || expected.creditMinor !== actual.creditMinor) {
+      if (
+        expected.debitMinor !== actual.debitMinor ||
+        expected.creditMinor !== actual.creditMinor
+      ) {
         findings.push(
           warning(context, {
             code: "LEDGER_PROJECTION_MISMATCH",
             severity: "HIGH_RISK",
             confidence: 1,
             title: "اختلاف بین Journal و Read Model دفتر",
-            explanation: "Read Model باید از Journal قابل بازسازی باشد؛ این اختلاف نیازمند بررسی فنی است.",
+            explanation:
+              "Read Model باید از Journal قابل بازسازی باشد؛ این اختلاف نیازمند بررسی فنی است.",
             evidence: [
-              { field: `account:${accountCode}.debit`, observedValue: actual.debitMinor.toString(), expectedValue: expected.debitMinor.toString(), source: "LEDGER" },
-              { field: `account:${accountCode}.credit`, observedValue: actual.creditMinor.toString(), expectedValue: expected.creditMinor.toString(), source: "LEDGER" },
+              {
+                field: `account:${accountCode}.debit`,
+                observedValue: actual.debitMinor.toString(),
+                expectedValue: expected.debitMinor.toString(),
+                source: "LEDGER",
+              },
+              {
+                field: `account:${accountCode}.credit`,
+                observedValue: actual.creditMinor.toString(),
+                expectedValue: expected.creditMinor.toString(),
+                source: "LEDGER",
+              },
             ],
-            suggestedActions: [{ code: "REBUILD_PROJECTION", label: "بازسازی Read Model پس از بررسی", requiresHumanApproval: true }],
+            suggestedActions: [
+              {
+                code: "REBUILD_PROJECTION",
+                label: "بازسازی Read Model پس از بررسی",
+                requiresHumanApproval: true,
+              },
+            ],
             sourceRefs: [],
             expiresAt: null,
           }),

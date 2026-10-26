@@ -77,6 +77,14 @@ export function computeRevaluation(input: {
 }): RevaluationRun {
   const lines: RevaluationLine[] = [];
   const journalLines: JournalLine[] = [];
+  const ids = new Set<string>();
+  for (const it of input.items) {
+    if (ids.has(it.itemId))
+      throw new DomainValidationError("REVALUATION_INVALID", `قلم ${it.itemId} تکراری است.`, {
+        itemId: it.itemId,
+      });
+    ids.add(it.itemId);
+  }
   const sorted = [...input.items].sort((a, b) =>
     a.itemId < b.itemId ? -1 : a.itemId > b.itemId ? 1 : 0,
   );

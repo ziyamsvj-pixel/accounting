@@ -32,11 +32,10 @@ export class AccountingReviewAgent implements Agent {
       });
     }
     // قاعده برای هر سطر ارزی جداگانه است (همانند FOREIGN_LINE_MISSING_RATE در Domain).
-    const missingIdx = d.lines.findIndex(
-      (l) => l.currencyCode !== d.baseCurrency && !l.rateSnapshotId,
+    const missing = d.lines.flatMap((l, i) =>
+      l.currencyCode !== d.baseCurrency && !l.rateSnapshotId ? [{ l, i }] : [],
     );
-    const missing = missingIdx >= 0 ? d.lines[missingIdx]! : null;
-    if (missing) {
+    if (missing.length > 0) {
       out.push({
         code: "FOREIGN_LINES_WITHOUT_RATE_CONTEXT",
         severity: "WARNING",
@@ -44,14 +43,13 @@ export class AccountingReviewAgent implements Agent {
         title: "سطر ارزی بدون نرخ",
         explanation:
           "برای سطر ارزی باید نرخ و snapshot آن انتخاب شود؛ در غیر این صورت Posting متوقف خواهد شد.",
-        evidence: [
-          {
-            field: `lines[${missingIdx}].currencyCode`,
-            observedValue: missing.currencyCode,
-            expectedValue: d.baseCurrency,
-            source: "DOCUMENT",
-          },
-        ],
+        // شاهد برای همهٔ سطرهای ارزیِ بی‌نرخ، تا بازبین همه را یک‌جا ببیند.
+        evidence: missing.map(({ l, i }) => ({
+          field: `lines[${i}].rateSnapshotId`,
+          observedValue: `${l.currencyCode}: null`,
+          expectedValue: "snapshot نرخ",
+          source: "DOCUMENT" as const,
+        })),
         suggestedActions: [
           { code: "SELECT_RATE", label: "انتخاب نرخ حسابداری", requiresHumanApproval: true },
         ],

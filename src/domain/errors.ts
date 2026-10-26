@@ -37,7 +37,8 @@ export type DomainErrorCode =
   | "ALLOCATION_INVALID"
   | "ALREADY_REVERSED"
   | "REVERSAL_IN_PROGRESS"
-  | "REVERSAL_MISMATCH";
+  | "REVERSAL_MISMATCH"
+  | "REVALUATION_INVALID";
 
 export class DomainValidationError extends Error {
   readonly code: DomainErrorCode;

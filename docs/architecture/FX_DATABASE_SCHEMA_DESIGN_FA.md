@@ -234,7 +234,9 @@ journal_entries (
   reversed_by_id uuid references journal_entries(id),
   created_by uuid not null,
   created_at timestamptz not null,
-  unique (company_id, fiscal_period_id, idempotency_key)
+  -- کلید idempotency در سرویس به Tenant + کاربر + Command محدود است؛ قید پایگاه‌داده هم باید کاربر را داشته باشد.
+  -- این قید از سرویس سخت‌گیرانه‌تر است: یک کاربر نباید یک کلید را برای دو Command متفاوت به کار ببرد.
+  unique (company_id, created_by, idempotency_key)
 )
 
 -- شمارهٔ قطعی در Company و دوره یکتاست (نسخهٔ سند جزء کلید نیست).

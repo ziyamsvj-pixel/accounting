@@ -208,6 +208,28 @@ describe("قواعد ارز و نرخ", () => {
     expect(v[0]!.lineIndex).toBe(0);
   });
 
+  test("سطر ارزی روی حساب ریالی (currencyCode=null) CURRENCY_MISMATCH می‌گیرد", () => {
+    const d = doc({
+      lines: [
+        {
+          accountCode: "6101",
+          currencyCode: "USD",
+          foreignAmountMinor: 100n,
+          rateSnapshotId: "snap-1",
+          debitBaseMinor: 500n,
+          creditBaseMinor: 0n,
+        },
+        { accountCode: "1101", currencyCode: "IRR", debitBaseMinor: 0n, creditBaseMinor: 500n },
+      ],
+    });
+    const v = checkLineInvariants(d, {
+      accounts,
+      currencies: reg,
+      rateSnapshotIds: new Set(["snap-1"]),
+    });
+    expect(v.map((x) => x.code)).toEqual(["CURRENCY_MISMATCH"]);
+  });
+
   test("تاریخ نامعتبر در نرخ یا تاریخ مبنا پذیرفته نمی‌شود", () => {
     expect(() => validateRate(usdIrr(), { at: "not-a-date" })).toThrow(DomainValidationError);
     expect(() => validateRate(usdIrr({ validFrom: "۱۴۰۵/۰۸/۰۱" }), { at: "2026-10-27" })).toThrow(
@@ -314,6 +336,12 @@ describe("تسعیر پایان دوره: اعتبار نرخ، snapshot و hash
     );
   });
 
+  test("قلم تکراری در تسعیر رد می‌شود", () => {
+    expect(() => run({ items: [items[0]!, items[0]!] })).toThrow(
+      expect.objectContaining({ code: "REVALUATION_INVALID" }),
+    );
+  });
+
   test("hash مانده‌ها به ترتیب ورودی وابسته نیست", () => {
     expect(run({ items: [...items].reverse() }).sourceBalanceHash).toBe(run().sourceBalanceHash);
   });
@@ -351,7 +379,7 @@ describe("ایجنت‌ها و گزارش روزانه", () => {
     const f = await new AccountingReviewAgent().review(ctx(d));
     const hit = f.find((x) => x.code === "FOREIGN_LINES_WITHOUT_RATE_CONTEXT");
     expect(hit).toBeDefined();
-    expect(hit!.evidence[0]!.field).toBe("lines[1].currencyCode");
+    expect(hit!.evidence.map((e) => e.field)).toEqual(["lines[1].rateSnapshotId"]);
     // سطر ریالی دارای snapshot نباید هشدار سطر ارزی بی‌نرخ را پنهان کند.
     const masked = doc({
       lines: [
@@ -367,6 +395,14 @@ describe("ایجنت‌ها و گزارش روزانه", () => {
     });
     const f2 = await new AccountingReviewAgent().review(ctx(masked));
     expect(f2.map((x) => x.code)).toContain("FOREIGN_LINES_WITHOUT_RATE_CONTEXT");
+    // همهٔ سطرهای ارزی بی‌نرخ در شواهد می‌آیند، نه فقط اولی.
+    const two = doc({
+      lines: [{ ...d.lines[1]! }, { ...d.lines[1]!, debitBaseMinor: 500n, creditBaseMinor: 0n }],
+    });
+    const f3 = await new AccountingReviewAgent().review(ctx(two));
+    expect(
+      f3.find((x) => x.code === "FOREIGN_LINES_WITHOUT_RATE_CONTEXT")!.evidence.map((e) => e.field),
+    ).toEqual(["lines[0].rateSnapshotId", "lines[1].rateSnapshotId"]);
   });
 
   test("اجرای هم‌زمان ارکستراتور یافتهٔ تکراری نمی‌سازد", async () => {
