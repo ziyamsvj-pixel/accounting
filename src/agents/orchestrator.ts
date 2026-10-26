@@ -138,7 +138,6 @@ export class AgentOrchestrator {
     for (const f of list) {
       const severity = (f.severity as string) === "BLOCKING" ? "HIGH_RISK" : f.severity; // ایجنت حق BLOCKING ندارد
       const dedupeKey = dedupeKeyOf(ctx, agent, f);
-      if (await this.deps.findings.findByDedupeKey(dedupeKey)) continue;
       const rec: PersistedFinding = {
         ...f,
         severity,
@@ -156,8 +155,8 @@ export class AgentOrchestrator {
         status: "OPEN",
         createdAt: this.deps.clock.nowIso(),
       };
-      await this.deps.findings.save(rec);
-      out.push(rec);
+      // بررسی و درج در یک گام اتمیک؛ دو اجرای هم‌زمان یافتهٔ تکراری نمی‌سازند.
+      if (await this.deps.findings.saveIfAbsent(rec)) out.push(rec);
     }
     return out;
   }
@@ -178,11 +177,17 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 export class InMemoryFindingRepository implements FindingRepository {
   readonly findings = new Map<string, PersistedFinding>();
   readonly runs: AgentRunRecord[] = [];
-  async findByDedupeKey(k: string) {
-    return [...this.findings.values()].find((f) => f.dedupeKey === k) ?? null;
+  private readonly byKey = new Map<string, string>();
+  async findByDedupeKey(companyId: string, k: string) {
+    const id = this.byKey.get(`${companyId}|${k}`);
+    return id ? (this.findings.get(id) ?? null) : null;
   }
-  async save(f: PersistedFinding) {
+  async saveIfAbsent(f: PersistedFinding) {
+    const key = `${f.companyId}|${f.dedupeKey}`;
+    if (this.byKey.has(key)) return false;
+    this.byKey.set(key, f.findingId);
     this.findings.set(f.findingId, f);
+    return true;
   }
   async saveRun(r: AgentRunRecord) {
     this.runs.push(r);

@@ -35,7 +35,9 @@ export type DomainErrorCode =
   | "IDEMPOTENCY_KEY_REUSED"
   | "TENANT_SCOPE_VIOLATION"
   | "ALLOCATION_INVALID"
-  | "ALREADY_REVERSED";
+  | "ALREADY_REVERSED"
+  | "REVERSAL_IN_PROGRESS"
+  | "REVERSAL_MISMATCH";
 
 export class DomainValidationError extends Error {
   readonly code: DomainErrorCode;

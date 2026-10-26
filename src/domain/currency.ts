@@ -119,6 +119,23 @@ export function defaultIranPolicy(companyId: string): CompanyCurrencyPolicy {
   };
 }
 
+/**
+ * نسبت تومان به ریال از دادهٔ نسخه‌دار می‌آید و قابل اعتماد فرض نمی‌شود:
+ * صورت و مخرج باید مثبت و «ریال به‌ازای هر تومان» عدد صحیح باشد تا تبدیل هرگز گرد نشود.
+ */
+export function assertTomanPolicyRatio(policy: CompanyCurrencyPolicy): bigint {
+  const n = policy.tomanToRialNumerator;
+  const d = policy.tomanToRialDenominator;
+  if (n <= 0n || d <= 0n || n % d !== 0n) {
+    throw new DomainValidationError(
+      "INVALID_RATE",
+      `نسبت تومان به ریال در Policy ${policy.policyVersion} نامعتبر است (${n}/${d}).`,
+      { policyVersion: policy.policyVersion },
+    );
+  }
+  return n / d;
+}
+
 /** ورودی کاربر (ریال یا تومان) → ریال در minor. تبدیل تومان فقط اگر Policy اجازه دهد. */
 export function inputToRialMinor(
   amount: string | number,
@@ -132,8 +149,8 @@ export function inputToRialMinor(
       "ورود مبلغ به تومان در Policy این شرکت فعال نیست.",
     );
   }
-  const toman = parseDecimalToMinor(amount, 0);
-  return (toman * policy.tomanToRialNumerator) / policy.tomanToRialDenominator;
+  const rialPerToman = assertTomanPolicyRatio(policy);
+  return parseDecimalToMinor(amount, 0) * rialPerToman;
 }
 
 /** ریال → تومان برای نمایش؛ باقی‌مانده (کسر تومان) برگردانده می‌شود تا پنهان نماند. */
@@ -141,11 +158,9 @@ export function rialToTomanDisplay(
   rialMinor: bigint,
   policy: CompanyCurrencyPolicy,
 ): { toman: bigint; remainderRial: bigint } {
-  const num = rialMinor * policy.tomanToRialDenominator;
-  const toman = divRound(num, policy.tomanToRialNumerator, "DOWN");
-  const remainderRial =
-    rialMinor - (toman * policy.tomanToRialNumerator) / policy.tomanToRialDenominator;
-  return { toman, remainderRial };
+  const rialPerToman = assertTomanPolicyRatio(policy);
+  const toman = divRound(rialMinor, rialPerToman, "DOWN");
+  return { toman, remainderRial: rialMinor - toman * rialPerToman };
 }
 
 export const minorFactor = (def: CurrencyDefinition): bigint => pow10(def.minorUnitScale);

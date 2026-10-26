@@ -8,6 +8,7 @@ import {
   DEFAULT_WORKFLOW_POLICY,
   assertPermission,
   assertScope,
+  assertReversalMirrors,
   assertVersion,
   buildReversal,
   editDraft,
@@ -174,6 +175,15 @@ export class JournalService {
         // ۲) مجوز و انتقال وضعیت
         const at = this.clock.nowIso();
         const moved = transition(doc, "POST", meta.actor, at, this.policy);
+        // ۲-ب) سند برگشتی: سند اصلی باید هنوز Posted و قرینهٔ دقیق باشد؛ در همین تراکنش REVERSED می‌شود.
+        const original = doc.reversalOfId
+          ? await this.load(tx, doc.reversalOfId, meta.actor)
+          : null;
+        if (original) {
+          if (original.reversedById || original.status !== "POSTED")
+            throw new DomainValidationError("ALREADY_REVERSED", "این سند قبلاً برگشت خورده است.");
+          assertReversalMirrors(original, doc);
+        }
         // ۳) شمارهٔ قطعی یکتا در Company و دوره
         const documentNumber = await tx.numbers.next(doc.scope.companyId, doc.fiscalPeriodId);
         const posted: JournalDocument = { ...moved, documentNumber };
@@ -194,6 +204,7 @@ export class JournalService {
           correlationId,
           details: { documentNumber },
         });
+        if (original) await this.markReversed(tx, original, posted, meta, correlationId);
         return this.result(posted, [], false);
       },
     );
@@ -211,6 +222,15 @@ export class JournalService {
       meta,
       async (tx, correlationId) => {
         const original = await this.load(tx, originalId, meta.actor);
+        // فقط یک سند برگشتی فعال برای هر سند اصلی؛ وگرنه دفتر چندبار برگشت می‌خورد.
+        const existing = await tx.journals.findReversalsOf(originalId);
+        if (existing.length > 0 && original.status === "POSTED" && !original.reversedById) {
+          throw new DomainValidationError(
+            "REVERSAL_IN_PROGRESS",
+            `برای این سند، سند برگشتی ${existing[0]!.draftNumber} در جریان است.`,
+            { reversalIds: existing.map((d) => d.documentId) },
+          );
+        }
         const rev = buildReversal(original, {
           documentId: this.ids.next("doc"),
           idempotencyKey: meta.idempotencyKey,
@@ -222,12 +242,25 @@ export class JournalService {
         });
         await tx.journals.insert(rev);
         await this.emit(tx, rev, "journal.created", correlationId, { reversalOf: originalId });
+        await tx.audit.append({
+          at: rev.createdAt,
+          actorId: meta.actor.userId,
+          action: "CREATE_REVERSAL",
+          documentId: rev.documentId,
+          fromVersion: 0,
+          toVersion: rev.version,
+          correlationId,
+          details: { reversalOf: originalId, reason: input.reason },
+        });
         return this.result(rev, [], false);
       },
     );
   }
 
-  /** پس از Post سند برگشتی، سند اصلی را REVERSED علامت می‌زند (تنها تغییر مجاز روی Posted: پیوند برگشت). */
+  /**
+   * سازگاری با نسخهٔ قبل: Post سند برگشتی اکنون خودش سند اصلی را در همان تراکنش REVERSED می‌کند.
+   * این Command فقط وضعیت را تأیید می‌کند (یا پیوند جاافتادهٔ داده‌های قدیمی را کامل می‌کند).
+   */
   completeReversal(reversalId: string, meta: CommandMeta): Promise<CommandResult> {
     return this.idempotent("completeReversal", { reversalId }, meta, async (tx, correlationId) => {
       const rev = await this.load(tx, reversalId, meta.actor);
@@ -235,16 +268,42 @@ export class JournalService {
         throw new DomainValidationError("INVALID_TRANSITION", "سند برگشتی هنوز ثبت قطعی نشده است.");
       }
       const original = await this.load(tx, rev.reversalOfId, meta.actor);
+      if (original.reversedById === rev.documentId) return this.result(original, [], false);
       if (original.reversedById)
         throw new DomainValidationError("ALREADY_REVERSED", "این سند قبلاً برگشت خورده است.");
-      const marked = {
-        ...transition(original, "REVERSE", meta.actor, this.clock.nowIso(), this.policy),
-        reversedById: rev.documentId,
-      };
-      await tx.journals.update(marked, original.version);
-      await this.emit(tx, marked, "journal.reversed", correlationId, { reversalId });
+      assertReversalMirrors(original, rev);
+      const marked = await this.markReversed(tx, original, rev, meta, correlationId);
       return this.result(marked, [], false);
     });
+  }
+
+  private async markReversed(
+    tx: TxContext,
+    original: JournalDocument,
+    reversal: JournalDocument,
+    meta: CommandMeta,
+    correlationId: string,
+  ): Promise<JournalDocument> {
+    const at = this.clock.nowIso();
+    const marked: JournalDocument = {
+      ...transition(original, "REVERSE", meta.actor, at, this.policy),
+      reversedById: reversal.documentId,
+    };
+    await tx.journals.update(marked, original.version);
+    await this.emit(tx, marked, "journal.reversed", correlationId, {
+      reversalId: reversal.documentId,
+    });
+    await tx.audit.append({
+      at,
+      actorId: meta.actor.userId,
+      action: "REVERSE",
+      documentId: original.documentId,
+      fromVersion: original.version,
+      toVersion: marked.version,
+      correlationId,
+      details: { reversalId: reversal.documentId, reversalNumber: reversal.documentNumber },
+    });
+    return marked;
   }
 
   // ---------------------------------------------------------------------------
@@ -370,7 +429,8 @@ export class JournalService {
         ),
       );
     }
-    const scope = `${meta.actor.tenantId}:${scopeName}`;
+    // کلید در محدودهٔ Tenant + کاربر: کلید یکسان دو کاربر نتیجهٔ دیگری را برنمی‌گرداند.
+    const scope = `${meta.actor.tenantId}:${meta.actor.userId}:${scopeName}`;
     const requestHash = hashOf(request);
     return this.uow.transaction(async (tx) => {
       const prev = await tx.idempotency.get(scope, meta.idempotencyKey);

@@ -167,6 +167,12 @@ export function editDraft(
   }
   assertPermission(actor, "EDIT", doc, policy);
   assertVersion(doc, expectedVersion);
+  if (doc.documentType === "REVERSAL" && patch.lines !== undefined) {
+    throw new DomainValidationError(
+      "REVERSAL_MISMATCH",
+      "سطرهای سند برگشتی از سند اصلی ساخته می‌شوند و قابل ویرایش نیستند.",
+    );
+  }
   if (actor.userId !== doc.createdBy && !actor.roles.includes("admin")) {
     throw new DomainValidationError(
       "PERMISSION_DENIED",
@@ -232,4 +238,40 @@ export function buildReversal(
     createdAt: input.at,
     reversalOfId: original.documentId,
   };
+}
+
+/**
+ * سند برگشتی باید دقیقاً قرینهٔ سند اصلی باشد: همان حساب، طبقه‌بندی، ارز، مبلغ ارزی و snapshot،
+ * با جابه‌جایی بدهکار و بستانکار. هنگام Post برگشتی دوباره بررسی می‌شود.
+ */
+export function assertReversalMirrors(original: JournalDocument, reversal: JournalDocument): void {
+  const fail = (i: number | null, why: string) => {
+    throw new DomainValidationError(
+      "REVERSAL_MISMATCH",
+      i === null ? `سند برگشتی با سند اصلی نمی‌خواند: ${why}` : `سطر ${i + 1} سند برگشتی: ${why}`,
+      i === null ? {} : { lineIndex: i },
+    );
+  };
+  if (reversal.reversalOfId !== original.documentId) fail(null, "پیوند سند اصلی نادرست است.");
+  if (reversal.scope.companyId !== original.scope.companyId) fail(null, "شرکت متفاوت است.");
+  if (reversal.baseCurrency !== original.baseCurrency) fail(null, "ارز پایه متفاوت است.");
+  if (reversal.lines.length !== original.lines.length) fail(null, "تعداد سطرها متفاوت است.");
+  reversal.lines.forEach((r, i) => {
+    const o = original.lines[i]!;
+    const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
+    if (
+      r.accountCode !== o.accountCode ||
+      !same(r.subsidiaryCode, o.subsidiaryCode) ||
+      !same(r.detail1Code, o.detail1Code) ||
+      !same(r.detail2Code, o.detail2Code) ||
+      r.currencyCode !== o.currencyCode ||
+      !same(r.foreignAmountMinor, o.foreignAmountMinor) ||
+      !same(r.rateSnapshotId, o.rateSnapshotId) ||
+      !same(r.partyId, o.partyId) ||
+      !same(r.costCenterId, o.costCenterId)
+    )
+      fail(i, "حساب، طبقه‌بندی، ارز یا snapshot با سطر اصلی یکسان نیست.");
+    if (r.debitBaseMinor !== o.creditBaseMinor || r.creditBaseMinor !== o.debitBaseMinor)
+      fail(i, "مبالغ قرینهٔ سطر اصلی نیست.");
+  });
 }

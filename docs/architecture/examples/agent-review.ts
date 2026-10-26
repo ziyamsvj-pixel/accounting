@@ -102,12 +102,17 @@ export interface AgentFindingRepository {
   saveFinding(finding: PersistedFinding): Promise<void>;
 }
 
+export interface LedgerAccountQuery {
+  companyId: string;
+  fiscalPeriodId: string;
+  accountCode: string;
+}
+
 export interface LedgerReader {
-  getProjectionTotals(input: {
-    companyId: string;
-    fiscalPeriodId: string;
-    accountCode: string;
-  }): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
+  /** جمع حساب در Read Model دفتر (projection) برای کل دوره. */
+  getProjectionTotals(input: LedgerAccountQuery): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
+  /** بازسازی همان جمع از کل اسناد Posted در Journal (منبع حقیقت) برای کل دوره. */
+  rebuildJournalTotals(input: LedgerAccountQuery): Promise<{ debitMinor: bigint; creditMinor: bigint }>;
 }
 
 export interface IdFactory {
@@ -243,21 +248,18 @@ export class LedgerIntegrityAgent implements Agent {
     const { snapshot } = context;
     const findings: AgentFinding[] = [];
 
+    // مقایسهٔ درست: projection کل حساب/دوره با بازسازی کل Journal همان حساب/دوره.
+    // جمع سطرهای همین یک سند معیار نیست؛ سندهای دیگر همان حساب در دوره هم در projection هستند.
     for (const accountCode of new Set(snapshot.lines.map((line) => line.accountCode))) {
-      const expected = snapshot.lines
-        .filter((line) => line.accountCode === accountCode)
-        .reduce(
-          (sum, line) => ({
-            debitMinor: sum.debitMinor + line.debitMinor,
-            creditMinor: sum.creditMinor + line.creditMinor,
-          }),
-          { debitMinor: 0n, creditMinor: 0n },
-        );
-      const actual = await this.ledger.getProjectionTotals({
+      const query = {
         companyId: snapshot.companyId,
         fiscalPeriodId: snapshot.fiscalPeriodId,
         accountCode,
-      });
+      };
+      const [expected, actual] = await Promise.all([
+        this.ledger.rebuildJournalTotals(query),
+        this.ledger.getProjectionTotals(query),
+      ]);
 
       if (expected.debitMinor !== actual.debitMinor || expected.creditMinor !== actual.creditMinor) {
         findings.push(

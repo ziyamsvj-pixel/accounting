@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { queryOptions } from "@tanstack/react-query";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { checkPostedLineEnrichment, isPostedStatus, validateLegacyLines } from "@/lib/legacy-journal-guard";
+import type { ClassificationKey } from "@/lib/legacy-journal-guard";
+import {
+  isPostedStatus,
+  normalizeClassification,
+  planPostedLineEnrichment,
+  validateLegacyLines,
+} from "@/lib/legacy-journal-guard";
 
 export type JournalLine = {
   id: string;
@@ -222,12 +228,35 @@ export const updateEntryLines = createServerFn({ method: "POST" })
     if (isPostedStatus(entry.status as string)) {
       // سند Posted: فقط تکمیل معین/تفصیلی خالی (اصل «سند Posted قابل ویرایش مستقیم نیست»).
       const currentLines = (entry.journal_lines ?? []) as unknown as JournalLine[];
+      const plans: { lineId: string; fills: { key: ClassificationKey; value: string }[] }[] = [];
       for (const line of data.lines) {
         const current = currentLines.find((l) => l.id === line.id);
         if (!current) return { error: "سطر موردنظر در این سند یافت نشد." };
-        const blocked = checkPostedLineEnrichment(current, line);
-        if (blocked) return { error: blocked };
+        const plan = planPostedLineEnrichment(current, line);
+        if (plan.error !== null) return { error: plan.error };
+        plans.push({ lineId: line.id, fills: plan.fills });
       }
+      // نوشتن شرطی و اتمیک برای هر فیلد: فقط اگر هنوز خالی باشد. اگر درخواست هم‌زمان دیگری
+      // زودتر مقدار را پر کرده باشد، هیچ سطری به‌روز نمی‌شود و بازنویسی رخ نمی‌دهد.
+      for (const p of plans) {
+        for (const f of p.fills) {
+          const { data: updated, error } = await supabase
+            .from("journal_lines")
+            .update({ [f.key]: f.value } as Partial<Record<ClassificationKey, string>>)
+            .eq("id", p.lineId)
+            .eq("entry_id", data.entryId)
+            .or(`${f.key}.is.null,${f.key}.eq.""`)
+            .select("id");
+          if (error) return { error: error.message };
+          if (!updated || updated.length === 0) {
+            return {
+              error:
+                "این فیلد هم‌زمان توسط کاربر دیگری تکمیل شد؛ صفحه را تازه کنید و دوباره بررسی کنید.",
+            };
+          }
+        }
+      }
+      return { error: null as string | null };
     }
     for (const line of data.lines) {
       const { error } = await supabase
@@ -235,12 +264,12 @@ export const updateEntryLines = createServerFn({ method: "POST" })
         .update({
           account_code: line.account_code,
           account_name: line.account_name,
-          subsidiary_code: line.subsidiary_code || null,
-          subsidiary_name: line.subsidiary_name || null,
-          detail1_code: line.detail1_code || null,
-          detail1_name: line.detail1_name || null,
-          detail2_code: line.detail2_code || null,
-          detail2_name: line.detail2_name || null,
+          subsidiary_code: normalizeClassification(line.subsidiary_code),
+          subsidiary_name: normalizeClassification(line.subsidiary_name),
+          detail1_code: normalizeClassification(line.detail1_code),
+          detail1_name: normalizeClassification(line.detail1_name),
+          detail2_code: normalizeClassification(line.detail2_code),
+          detail2_name: normalizeClassification(line.detail2_name),
         })
         .eq("id", line.id)
         .eq("entry_id", data.entryId);

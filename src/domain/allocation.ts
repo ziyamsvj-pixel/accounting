@@ -37,6 +37,14 @@ export function allocateCost(
         return t.manualShare ?? 0n;
     }
   };
+  const seen = new Set<string>();
+  for (const t of targets) {
+    if (seen.has(t.itemId))
+      throw new DomainValidationError("ALLOCATION_INVALID", `قلم ${t.itemId} تکراری است.`, {
+        itemId: t.itemId,
+      });
+    seen.add(t.itemId);
+  }
   const weights = targets.map(weightOf);
   if (weights.some((w) => w < 0n))
     throw new DomainValidationError("ALLOCATION_INVALID", "مبنای تخصیص منفی است.");

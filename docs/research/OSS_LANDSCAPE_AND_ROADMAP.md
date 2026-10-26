@@ -4,9 +4,9 @@
 
 | پروژه | الگوی اقتباس‌شده | محل در کد |
 |---|---|---|
-| ERPNext | سند منبع و اثر دفترکل جدا؛ کنترل دوره؛ Reversal به‌جای ویرایش | `domain/journal.ts`، `domain/workflow.ts` |
-| Frappe Books | فرم ساده؛ گزارش‌های قابل فهم (تراز آزمایشی از Projection) | `domain/ledger.ts` (`trialBalance`) |
-| Blnk | مقدار دقیق، نرخ، Reference، وضعیت تراکنش، Reconciliation | `domain/money.ts`، `domain/fx.ts`، `domain/ledger.ts` |
+| ERPNext | سند منبع و اثر دفترکل جدا؛ کنترل دوره؛ Reversal به‌جای ویرایش | `src/domain/journal.ts`، `src/domain/workflow.ts` |
+| Frappe Books | فرم ساده؛ گزارش‌های قابل فهم (تراز آزمایشی از Projection) | `src/domain/ledger.ts` (`trialBalance`) |
+| Blnk | مقدار دقیق، نرخ، Reference، وضعیت تراکنش، Reconciliation | `src/domain/money.ts`، `src/domain/fx.ts`، `src/domain/ledger.ts` |
 
 مقررات ایران، RLS، ریال/تومان و ساختار Tenant/Company/Branch در معماری خود پروژه تعریف شده‌اند.
 

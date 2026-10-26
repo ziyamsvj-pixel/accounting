@@ -31,8 +31,12 @@ export class AccountingReviewAgent implements Agent {
         expiresAt: null,
       });
     }
-    const foreign = d.lines.filter((l) => l.currencyCode !== d.baseCurrency);
-    if (foreign.length > 0 && !d.lines.some((l) => l.rateSnapshotId)) {
+    // قاعده برای هر سطر ارزی جداگانه است (همانند FOREIGN_LINE_MISSING_RATE در Domain).
+    const missingIdx = d.lines.findIndex(
+      (l) => l.currencyCode !== d.baseCurrency && !l.rateSnapshotId,
+    );
+    const missing = missingIdx >= 0 ? d.lines[missingIdx]! : null;
+    if (missing) {
       out.push({
         code: "FOREIGN_LINES_WITHOUT_RATE_CONTEXT",
         severity: "WARNING",
@@ -42,8 +46,8 @@ export class AccountingReviewAgent implements Agent {
           "برای سطر ارزی باید نرخ و snapshot آن انتخاب شود؛ در غیر این صورت Posting متوقف خواهد شد.",
         evidence: [
           {
-            field: "lines.currencyCode",
-            observedValue: foreign[0]!.currencyCode,
+            field: `lines[${missingIdx}].currencyCode`,
+            observedValue: missing.currencyCode,
             expectedValue: d.baseCurrency,
             source: "DOCUMENT",
           },

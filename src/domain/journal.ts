@@ -202,6 +202,13 @@ export function checkLineInvariants(
           message: `سطر ${i + 1}: حساب ${acc.code} غیرفعال است.`,
           lineIndex: i,
         });
+      // حساب ارزی فقط سطر هم‌ارز می‌پذیرد؛ وگرنه مبلغ ارزی لازم برای تسعیر و تسویه گم می‌شود.
+      if (acc.currencyCode != null && acc.currencyCode !== l.currencyCode)
+        v.push({
+          code: "CURRENCY_MISMATCH",
+          message: `سطر ${i + 1}: ارز سطر (${l.currencyCode}) با ارز حساب ${acc.code} (${acc.currencyCode}) یکسان نیست.`,
+          lineIndex: i,
+        });
     }
     let lineCurrencyOk = true;
     try {
