@@ -10,7 +10,9 @@ const NAV = [
   { to: "/allocation", label: "تخصیص هزینه" },
   { to: "/documents", label: "اسناد حسابداری" },
   { to: "/ledger", label: "دفتر کل" },
-  { to: "/reports", label: "گزارش‌های مالی" },
+  { to: "/subsidiary-ledger", label: "دفتر معین" },
+  { to: "/detail-ledger-1", label: "تفصیلی ۱" },
+  { to: "/detail-ledger-2", label: "تفصیلی ۲" },
 ] as const;
 
 function AuthNav() {

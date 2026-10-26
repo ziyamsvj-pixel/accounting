@@ -14,13 +14,16 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AllocationRouteImport } from './routes/allocation'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SourcesRouteImport } from './routes/sources'
+import { Route as AuthenticatedDetailLedger1RouteImport } from './routes/_authenticated/detail-ledger-1'
+import { Route as AuthenticatedDetailLedger2RouteImport } from './routes/_authenticated/detail-ledger-2'
 import { Route as AuthenticatedLedgerRouteImport } from './routes/_authenticated/ledger'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedSubsidiaryLedgerRouteImport } from './routes/_authenticated/subsidiary-ledger'
 import { Route as RulesIndexRouteImport } from './routes/rules.index'
 import { Route as RulesRuleIdRouteImport } from './routes/rules.$ruleId'
 import { Route as AuthenticatedDocumentsIndexRouteImport } from './routes/_authenticated/documents.index'
 import { Route as AuthenticatedDocumentsEntryIdRouteImport } from './routes/_authenticated/documents.$entryId'
 import { Route as AuthenticatedDocumentsNewRouteImport } from './routes/_authenticated/documents.new'
+import { Route as AuthenticatedDocumentsEntryIdEditRouteImport } from './routes/_authenticated/documents.$entryId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,16 +49,29 @@ const SourcesRoute = SourcesRouteImport.update({
   path: '/sources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDetailLedger1Route =
+  AuthenticatedDetailLedger1RouteImport.update({
+    id: '/detail-ledger-1',
+    path: '/detail-ledger-1',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDetailLedger2Route =
+  AuthenticatedDetailLedger2RouteImport.update({
+    id: '/detail-ledger-2',
+    path: '/detail-ledger-2',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLedgerRoute = AuthenticatedLedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedSubsidiaryLedgerRoute =
+  AuthenticatedSubsidiaryLedgerRouteImport.update({
+    id: '/subsidiary-ledger',
+    path: '/subsidiary-ledger',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const RulesIndexRoute = RulesIndexRouteImport.update({
   id: '/rules/',
   path: '/rules/',
@@ -84,32 +100,44 @@ const AuthenticatedDocumentsNewRoute =
     path: '/documents/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDocumentsEntryIdEditRoute =
+  AuthenticatedDocumentsEntryIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedDocumentsEntryIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/allocation': typeof AllocationRoute
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/detail-ledger-1': typeof AuthenticatedDetailLedger1Route
+  '/detail-ledger-2': typeof AuthenticatedDetailLedger2Route
   '/ledger': typeof AuthenticatedLedgerRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/subsidiary-ledger': typeof AuthenticatedSubsidiaryLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
-  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRouteWithChildren
   '/documents/new': typeof AuthenticatedDocumentsNewRoute
   '/documents/': typeof AuthenticatedDocumentsIndexRoute
+  '/documents/$entryId/edit': typeof AuthenticatedDocumentsEntryIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/allocation': typeof AllocationRoute
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/detail-ledger-1': typeof AuthenticatedDetailLedger1Route
+  '/detail-ledger-2': typeof AuthenticatedDetailLedger2Route
   '/ledger': typeof AuthenticatedLedgerRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/subsidiary-ledger': typeof AuthenticatedSubsidiaryLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules': typeof RulesIndexRoute
-  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRouteWithChildren
   '/documents/new': typeof AuthenticatedDocumentsNewRoute
   '/documents': typeof AuthenticatedDocumentsIndexRoute
+  '/documents/$entryId/edit': typeof AuthenticatedDocumentsEntryIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,13 +146,16 @@ export interface FileRoutesById {
   '/allocation': typeof AllocationRoute
   '/auth': typeof AuthRoute
   '/sources': typeof SourcesRoute
+  '/_authenticated/detail-ledger-1': typeof AuthenticatedDetailLedger1Route
+  '/_authenticated/detail-ledger-2': typeof AuthenticatedDetailLedger2Route
   '/_authenticated/ledger': typeof AuthenticatedLedgerRoute
-  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/subsidiary-ledger': typeof AuthenticatedSubsidiaryLedgerRoute
   '/rules/$ruleId': typeof RulesRuleIdRoute
   '/rules/': typeof RulesIndexRoute
-  '/_authenticated/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRoute
+  '/_authenticated/documents/$entryId': typeof AuthenticatedDocumentsEntryIdRouteWithChildren
   '/_authenticated/documents/new': typeof AuthenticatedDocumentsNewRoute
   '/_authenticated/documents/': typeof AuthenticatedDocumentsIndexRoute
+  '/_authenticated/documents/$entryId/edit': typeof AuthenticatedDocumentsEntryIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,26 +164,32 @@ export interface FileRouteTypes {
     | '/allocation'
     | '/auth'
     | '/sources'
+    | '/detail-ledger-1'
+    | '/detail-ledger-2'
     | '/ledger'
-    | '/reports'
+    | '/subsidiary-ledger'
     | '/rules/$ruleId'
     | '/rules/'
     | '/documents/$entryId'
     | '/documents/new'
     | '/documents/'
+    | '/documents/$entryId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/allocation'
     | '/auth'
     | '/sources'
+    | '/detail-ledger-1'
+    | '/detail-ledger-2'
     | '/ledger'
-    | '/reports'
+    | '/subsidiary-ledger'
     | '/rules/$ruleId'
     | '/rules'
     | '/documents/$entryId'
     | '/documents/new'
     | '/documents'
+    | '/documents/$entryId/edit'
   id:
     | '__root__'
     | '/'
@@ -160,13 +197,16 @@ export interface FileRouteTypes {
     | '/allocation'
     | '/auth'
     | '/sources'
+    | '/_authenticated/detail-ledger-1'
+    | '/_authenticated/detail-ledger-2'
     | '/_authenticated/ledger'
-    | '/_authenticated/reports'
+    | '/_authenticated/subsidiary-ledger'
     | '/rules/$ruleId'
     | '/rules/'
     | '/_authenticated/documents/$entryId'
     | '/_authenticated/documents/new'
     | '/_authenticated/documents/'
+    | '/_authenticated/documents/$entryId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -216,6 +256,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/detail-ledger-1': {
+      id: '/_authenticated/detail-ledger-1'
+      path: '/detail-ledger-1'
+      fullPath: '/detail-ledger-1'
+      preLoaderRoute: typeof AuthenticatedDetailLedger1RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/detail-ledger-2': {
+      id: '/_authenticated/detail-ledger-2'
+      path: '/detail-ledger-2'
+      fullPath: '/detail-ledger-2'
+      preLoaderRoute: typeof AuthenticatedDetailLedger2RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ledger': {
       id: '/_authenticated/ledger'
       path: '/ledger'
@@ -223,11 +277,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLedgerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+    '/_authenticated/subsidiary-ledger': {
+      id: '/_authenticated/subsidiary-ledger'
+      path: '/subsidiary-ledger'
+      fullPath: '/subsidiary-ledger'
+      preLoaderRoute: typeof AuthenticatedSubsidiaryLedgerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/rules/': {
@@ -265,21 +319,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents/$entryId/edit': {
+      id: '/_authenticated/documents/$entryId/edit'
+      path: '/edit'
+      fullPath: '/documents/$entryId/edit'
+      preLoaderRoute: typeof AuthenticatedDocumentsEntryIdEditRouteImport
+      parentRoute: typeof AuthenticatedDocumentsEntryIdRoute
+    }
   }
 }
 
+interface AuthenticatedDocumentsEntryIdRouteChildren {
+  AuthenticatedDocumentsEntryIdEditRoute: typeof AuthenticatedDocumentsEntryIdEditRoute
+}
+
+const AuthenticatedDocumentsEntryIdRouteChildren: AuthenticatedDocumentsEntryIdRouteChildren =
+  {
+    AuthenticatedDocumentsEntryIdEditRoute:
+      AuthenticatedDocumentsEntryIdEditRoute,
+  }
+
+const AuthenticatedDocumentsEntryIdRouteWithChildren =
+  AuthenticatedDocumentsEntryIdRoute._addFileChildren(
+    AuthenticatedDocumentsEntryIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDetailLedger1Route: typeof AuthenticatedDetailLedger1Route
+  AuthenticatedDetailLedger2Route: typeof AuthenticatedDetailLedger2Route
   AuthenticatedLedgerRoute: typeof AuthenticatedLedgerRoute
-  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
-  AuthenticatedDocumentsEntryIdRoute: typeof AuthenticatedDocumentsEntryIdRoute
+  AuthenticatedSubsidiaryLedgerRoute: typeof AuthenticatedSubsidiaryLedgerRoute
+  AuthenticatedDocumentsEntryIdRoute: typeof AuthenticatedDocumentsEntryIdRouteWithChildren
   AuthenticatedDocumentsNewRoute: typeof AuthenticatedDocumentsNewRoute
   AuthenticatedDocumentsIndexRoute: typeof AuthenticatedDocumentsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDetailLedger1Route: AuthenticatedDetailLedger1Route,
+  AuthenticatedDetailLedger2Route: AuthenticatedDetailLedger2Route,
   AuthenticatedLedgerRoute: AuthenticatedLedgerRoute,
-  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
-  AuthenticatedDocumentsEntryIdRoute: AuthenticatedDocumentsEntryIdRoute,
+  AuthenticatedSubsidiaryLedgerRoute: AuthenticatedSubsidiaryLedgerRoute,
+  AuthenticatedDocumentsEntryIdRoute:
+    AuthenticatedDocumentsEntryIdRouteWithChildren,
   AuthenticatedDocumentsNewRoute: AuthenticatedDocumentsNewRoute,
   AuthenticatedDocumentsIndexRoute: AuthenticatedDocumentsIndexRoute,
 }
